@@ -109,9 +109,8 @@ final class AppModel {
             self.organizationProblem = loaded.problem
         }
         self.settings = settings
-        let afterWrite = Callback()
-        self.writes = WriteActionCoordinator(runner: gh) { afterWrite.action() }
-        afterWrite.action = { [weak self] in Task { await self?.refreshGitHub() } }
+        self.writes = WriteActionCoordinator(runner: gh)
+        writes.onSuccess = { [weak self] in Task { await self?.refreshGitHub() } }
         if migratedHidden {
             persistOrganization()
             persistSettings()
@@ -291,167 +290,7 @@ final class AppModel {
 
     var isRefreshing: Bool { isRefreshingLocal || isRefreshingGitHub }
 
-    // MARK: - Actions
-
-    func select(_ task: BoardTask?) {
-        selectedTaskID = task?.id
-    }
-
-    func openPullRequest(_ task: BoardTask) {
-        guard let url = task.pullRequest?.url else { return }
-        NSWorkspace.shared.open(url)
-    }
-
-    func openFolder(_ task: BoardTask, with opener: FolderOpener? = nil) {
-        guard let path = task.directory else { return }
-        let url = URL(filePath: path, directoryHint: .isDirectory)
-        guard FileManager.default.fileExists(atPath: path) else {
-            show(.failure, "That folder no longer exists")
-            return
-        }
-        switch opener ?? settings.folderOpener {
-        case .finder:
-            NSWorkspace.shared.open(url)
-        case .terminal:
-            open(url, withApp: URL(filePath: "/System/Applications/Utilities/Terminal.app"))
-        case .editor:
-            if let editor = Self.editorURL {
-                open(url, withApp: editor)
-            } else {
-                NSWorkspace.shared.open(url)
-            }
-        }
-    }
-
-    private func open(_ url: URL, withApp app: URL) {
-        NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
-    }
-
-    /// The app that opens source code by default, used as "the default editor".
-    static var editorURL: URL? {
-        NSWorkspace.shared.urlForApplication(toOpen: .sourceCode)
-            ?? NSWorkspace.shared.urlForApplication(toOpen: .plainText)
-    }
-
-    static var editorName: String {
-        editorURL.map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? "Editor"
-    }
-
-    /// Opens the session in the Claude or Codex app through its deep link.
-    func openInApp(_ session: AgentSession) {
-        guard let url = session.appURL else { return }
-        guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil else {
-            show(.failure, "\(session.app.displayName) isn't installed")
-            return
-        }
-        NSWorkspace.shared.open(url)
-    }
-
-    func openInApp(_ task: BoardTask) {
-        guard let session = task.sessionToOpen else { return }
-        openInApp(session)
-    }
-
-    func copyResumeCommand(_ session: AgentSession) {
-        guard let command = session.resumeCommand else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(command, forType: .string)
-        show(.success, "Copied \(session.app.displayName) resume command")
-    }
-
-    func copyBranch(_ task: BoardTask) {
-        guard let branch = task.branch else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(branch, forType: .string)
-        show(.success, "Copied branch name")
-    }
-
-    func toggleHidden(_ task: BoardTask) {
-        if task.isHidden {
-            organization.setHidden(false, for: task.id)
-            settings.hiddenTaskIDs.remove(task.id)
-            show(.info, "Card shown again")
-        } else {
-            organization.setHidden(true, for: task.id)
-            if selectedTaskID == task.id { selectedTaskID = nil }
-            show(.info, "Card hidden. Turn on “Show hidden” to see it.")
-        }
-    }
-
-    // MARK: Lanes and tags
-
-    /// Moves a card, and the rest of its stack, to a lane.
-    func setLane(_ lane: Lane, for task: BoardTask) {
-        let ids = BoardLayout.stackPeers(of: task, in: board.tasks)
-        guard ids.contains(where: { (board.task(id: $0)?.lane ?? .normal) != lane }) else { return }
-        organization.setLane(lane, for: ids)
-        show(.info, ids.count > 1 ? "Moved the stack to \(lane.title)" : "Moved to \(lane.title)")
-    }
-
-    func setTag(_ tag: CardTag, on: Bool, for task: BoardTask) {
-        organization.setTag(tag.id, on: on, for: task.id)
-    }
-
-    func hasTag(_ tag: CardTag, _ task: BoardTask) -> Bool {
-        task.tags.contains { $0.id == tag.id }
-    }
-
-    /// Creates a tag (or finds one with that name) and adds it to `task` if given.
-    @discardableResult
-    func createTag(named name: String, color: TagColor? = nil, for task: BoardTask? = nil) -> CardTag? {
-        guard let tag = organization.createTag(named: name, color: color) else { return nil }
-        if let task { organization.setTag(tag.id, on: true, for: task.id) }
-        return tag
-    }
-
-    func beginNewTag(for task: BoardTask?) {
-        newTagTarget = task
-        isNamingNewTag = true
-    }
-
-    func deleteTag(_ tag: CardTag) {
-        organization.deleteTag(tag.id)
-        tagFilter.tagIDs.remove(tag.id)
-        show(.info, "Deleted tag “\(tag.name)”")
-    }
-
-    /// A drop onto a row moves the cards to the row's lane and, for tag rows, adds the tag.
-    func drop(_ taskIDs: [String], on row: BoardRow) {
-        for id in taskIDs {
-            guard let task = board.task(id: id) else { continue }
-            organization.setLane(row.dropLane, for: BoardLayout.stackPeers(of: task, in: board.tasks))
-            if let tagID = row.dropTag { organization.setTag(tagID, on: true, for: id) }
-        }
-    }
-
-    func cardsUsing(_ tag: CardTag) -> Int {
-        organization.cards.values.filter { $0.tagIDs.contains(tag.id) }.count
-    }
-
     var organizationFilePath: String { organizationStore.url.path }
-
-    func request(_ action: PRWriteAction, for task: BoardTask) {
-        guard let pr = task.pullRequest else { return }
-        Task {
-            await writes.request(action, for: pr)
-            if case let .failed(message) = writes.lastOutcome {
-                show(.failure, message)
-                writes.clearOutcome()
-            }
-        }
-    }
-
-    func confirmWrite() {
-        Task {
-            await writes.confirm()
-            switch writes.lastOutcome {
-            case let .succeeded(message): show(.success, message)
-            case let .failed(message): show(.failure, message)
-            case nil: break
-            }
-            writes.clearOutcome()
-        }
-    }
 
     func show(_ kind: Toast.Kind, _ message: String) {
         toast = Toast(kind: kind, message: message)
@@ -504,22 +343,5 @@ final class AppModel {
     private func persistSettings() {
         guard !mode.demo, let data = try? JSONEncoder().encode(settings) else { return }
         UserDefaults.standard.set(data, forKey: Self.settingsKey)
-    }
-}
-
-/// Late-bound callback, so the write coordinator can refresh the model that owns it.
-private final class Callback {
-    var action: () -> Void = {}
-}
-
-/// Answers `gh` in demo mode so demo screens never touch GitHub.
-struct DemoGH: GHRunning {
-    func run(_ arguments: [String]) async throws -> ProcessResult {
-        if arguments.first == "repo" {
-            return ProcessResult(exitCode: 0, stdout: Data(#"{"squashMergeAllowed":true,"mergeCommitAllowed":true,"rebaseMergeAllowed":false}"#.utf8))
-        }
-        // Writes "succeed" without doing anything.
-        try await Task.sleep(for: .milliseconds(400))
-        return ProcessResult(exitCode: 0)
     }
 }

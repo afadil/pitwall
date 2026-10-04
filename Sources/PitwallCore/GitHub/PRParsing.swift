@@ -47,14 +47,6 @@ public enum PRParsing {
     }
 }
 
-/// Decodes a value or nil, so one malformed element doesn't sink the array.
-struct Lenient<T: Decodable>: Decodable {
-    var value: T?
-    init(from decoder: Decoder) throws {
-        value = try? T(from: decoder)
-    }
-}
-
 struct RawOwner: Decodable {
     var login: String?
 }

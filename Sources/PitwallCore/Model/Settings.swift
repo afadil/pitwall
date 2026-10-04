@@ -39,6 +39,8 @@ public struct BoardSettings: Sendable, Codable, Hashable {
     public var showArchived: Bool
     public var showHidden: Bool
     public var excludedRepos: Set<String>
+    /// Hidden cards from before organization.json existed. Read once on launch to
+    /// move them there; nothing else uses it.
     public var hiddenTaskIDs: Set<String>
     public var folderOpener: FolderOpener
     public var showMenuBarExtra: Bool

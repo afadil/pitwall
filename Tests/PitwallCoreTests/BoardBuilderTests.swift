@@ -78,16 +78,20 @@ struct BoardBuilderTests {
     @Test func hiddenCardsAndExcludedRepos() {
         let a = AgentSession.make(id: "a", branch: "feat/a")
         let b = AgentSession.make(.codex, id: "b", branch: "feat/b")
-        let hideA = BoardSettings(hiddenTaskIDs: ["github.com/acme/orbit#feat/a"])
-        #expect(build([a, b], settings: hideA).tasks.map(\.id) == ["github.com/acme/orbit#feat/b"])
+        var org = Organization()
+        org.setHidden(true, for: "github.com/acme/orbit#feat/a", now: testNow)
+        func build(_ settings: BoardSettings, repos: [String: ResolvedRepo]? = nil, organization: Organization? = nil) -> Board {
+            BoardBuilder.build(sessions: [a, b], repos: repos ?? [a.id: orbit, b.id: orbit], pullRequests: [:],
+                               settings: settings, organization: organization ?? org, now: testNow)
+        }
+        #expect(build(BoardSettings()).tasks.map(\.id) == ["github.com/acme/orbit#feat/b"])
 
-        var showHidden = hideA
-        showHidden.showHidden = true
-        let shown = build([a, b], settings: showHidden)
+        let shown = build(BoardSettings(showHidden: true))
         #expect(shown.tasks.count == 2)
         #expect(shown.tasks.first { $0.id.hasSuffix("feat/a") }?.isHidden == true)
 
-        let excluded = build([a, b], repos: [a.id: orbit, b.id: lumen], settings: BoardSettings(excludedRepos: ["github.com/acme/lumen"]))
+        let excluded = build(BoardSettings(excludedRepos: ["github.com/acme/lumen"]), repos: [a.id: orbit, b.id: lumen],
+                             organization: Organization())
         #expect(excluded.tasks.count == 1)
         // Excluded repos still appear in the repo list so they can be re-included.
         #expect(excluded.repos.map(\.key).contains("github.com/acme/lumen"))

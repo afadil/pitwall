@@ -157,8 +157,7 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
 
     /// Folder to open: the newest session's working directory.
     public var directory: String? {
-        sessions.lazy.compactMap(\.cwd).first { FileManager.default.fileExists(atPath: $0) }
-            ?? sessions.lazy.compactMap(\.cwd).first
+        sessions.first(where: \.cwdExists)?.cwd ?? sessions.lazy.compactMap(\.cwd).first
     }
 
     /// `repo · branch` line for the card.

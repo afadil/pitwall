@@ -169,13 +169,6 @@ struct OrganizationTests {
         #expect(BoardLayout.stackPeers(of: top, in: board.tasks) == ["github.com/acme/orbit#feat/a", "github.com/acme/orbit#feat/b"])
     }
 
-    @Test func legacyHiddenSettingStillHides() {
-        let a = session("a", branch: "feat/a")
-        let board = BoardBuilder.build(sessions: [a], repos: [a.id: orbit], pullRequests: [:],
-                                       settings: BoardSettings(hiddenTaskIDs: ["github.com/acme/orbit#feat/a"]), now: testNow)
-        #expect(board.tasks.isEmpty)
-    }
-
     // MARK: Layout and filter
 
     private func task(_ branch: String, lane: Lane = .normal, tags: [CardTag] = [], labels: [String] = [], repo: ResolvedRepo? = orbit,

@@ -9,7 +9,6 @@ import SwiftUI
 enum SnapshotRunner {
     static func run(model: AppModel) async {
         guard let directory = model.mode.snapshotDirectory else { return }
-        print("snapshot: starting, demo=\(model.mode.demo)")
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let prefix = model.mode.snapshotPrefix
 
@@ -30,7 +29,6 @@ enum SnapshotRunner {
             if mainWindow != nil { break }
             try? await Task.sleep(for: .milliseconds(250))
         }
-        print("snapshot: windows=\(NSApp.windows.map { "\(type(of: $0))|\($0.title)|titled=\($0.styleMask.contains(.titled))|visible=\($0.isVisible)" })")
         guard let window = mainWindow, let screen = window.screen ?? NSScreen.main else {
             print("snapshot: main window not found")
             NSApp.terminate(nil)

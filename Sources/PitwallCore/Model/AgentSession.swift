@@ -47,6 +47,8 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
     public var resumeID: String
     public var title: String
     public var cwd: String?
+    /// Whether `cwd` existed when the session was read (worktrees get deleted).
+    public var cwdExists: Bool
     public var branch: String?
     /// Remote URL recorded by the app itself (Codex `git_origin_url`).
     public var originURL: String?
@@ -71,6 +73,7 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
         resumeID: String,
         title: String,
         cwd: String? = nil,
+        cwdExists: Bool = false,
         branch: String? = nil,
         originURL: String? = nil,
         fallbackDirectories: [String] = [],
@@ -88,6 +91,7 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
         self.resumeID = resumeID
         self.title = title
         self.cwd = cwd
+        self.cwdExists = cwdExists
         self.branch = branch
         self.originURL = originURL
         self.fallbackDirectories = fallbackDirectories
@@ -130,16 +134,5 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
         }
         guard let cwd, !cwd.isEmpty else { return base }
         return "cd \(Shell.quote(cwd)) && \(base)"
-    }
-}
-
-enum Shell {
-    /// POSIX single-quote escaping.
-    static func quote(_ value: String) -> String {
-        let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-+=:@,")
-        if !value.isEmpty, value.unicodeScalars.allSatisfy(safe.contains) {
-            return value
-        }
-        return "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }

@@ -67,8 +67,7 @@ public enum BoardBuilder {
             if onBranch.isEmpty, pr == nil { continue }
 
             guard let placement = BoardRules.placement(sessions: onBranch, pullRequest: pr, now: now) else { continue }
-            // `hiddenTaskIDs` in settings predates organization.json; both still count.
-            let hidden = organization.isHidden(id) || settings.hiddenTaskIDs.contains(id)
+            let hidden = organization.isHidden(id)
             if hidden, !settings.showHidden { continue }
             tasks.append(BoardTask(
                 id: id,
