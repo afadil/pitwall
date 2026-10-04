@@ -93,7 +93,10 @@ final class AppModel {
                 paths: [paths.claudeSessions, paths.claudeProjects, paths.codexHome],
                 filter: FileWatcher.relevantFilter(paths: paths)
             ) { [weak self] in
-                Task { @MainActor in self?.scheduleLocalRefresh() }
+                Task { @MainActor in
+                    self?.log("file change")
+                    self?.scheduleLocalRefresh()
+                }
             }
             schedulePolling()
         }
@@ -125,7 +128,9 @@ final class AppModel {
         guard !mode.demo, !isRefreshingLocal else { return }
         isRefreshingLocal = true
         defer { isRefreshingLocal = false }
+        let started = Date()
         local = await engine.readLocal(now: Date())
+        log("local refresh: \(local.sessions.count) sessions in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
         hasLoaded = true
         rebuild()
         // A new branch in a repo we haven't polled yet: fetch its PRs now.
@@ -141,7 +146,9 @@ final class AppModel {
         if onlyIfNewRepos, Set(slugs).isSubset(of: fetchedSlugs) { return }
         isRefreshingGitHub = true
         defer { isRefreshingGitHub = false }
+        let started = Date()
         github = await engine.fetchGitHub(slugs: slugs, now: Date())
+        log("github refresh: \(slugs.count) repos, \(github.errors.count) errors in \(Int(Date().timeIntervalSince(started) * 1000)) ms")
         fetchedSlugs = Set(slugs)
         rebuild()
     }
@@ -334,6 +341,11 @@ final class AppModel {
             guard !Task.isCancelled else { return }
             self?.toast = nil
         }
+    }
+
+    private func log(_ message: String) {
+        guard mode.verbose else { return }
+        print("[\(Date().formatted(date: .omitted, time: .standard))] \(message)")
     }
 
     // MARK: - Settings persistence

@@ -22,7 +22,9 @@ struct CodexReaderTests {
         #expect(csv.turn == .ended)
         #expect(csv.resumeCommand == "cd /Users/dev/work/lumen && codex resume 019a0001-0000-7000-8000-000000000001")
         #expect(csv.lastActivity == date("2026-10-04T13:09:30.2Z"))
-        #expect(csv.activity.count == 2) // 13:00–13:04 and 13:09
+        // 13:00–13:04 and 13:09 are within the 8-minute gap, so one span.
+        #expect(csv.activity.count == 1)
+        #expect(csv.activity.first?.start == date("2026-10-04T13:00:00Z"))
 
         let sync = try #require(byID["019a0002-0000-7000-8000-000000000002"])
         #expect(sync.turn == .running) // task_started without task_complete

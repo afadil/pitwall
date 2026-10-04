@@ -90,9 +90,10 @@ struct MenuBarPanel: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(waiting == 1 ? "task waiting" : "tasks waiting")
                         .font(.callout.weight(.medium))
-                    Text("\(model.board.count(.working)) working · \(model.board.count(.ready)) ready to merge")
+                    Text("\(model.board.count(.working)) working · \(model.board.count(.ready)) ready")
                         .font(Theme.monoSmall)
                         .foregroundStyle(.secondary)
+                        .fixedSize()
                 }
             }
             .accessibilityElement(children: .combine)
@@ -131,6 +132,15 @@ struct MenuBarPanel: View {
                 }
                 .frame(maxHeight: 214)
                 .scrollIndicators(.never)
+                .mask {
+                    // Fade the last row when the list scrolls, instead of a hard cut.
+                    VStack(spacing: 0) {
+                        Color.black
+                        if tasks.count > 6 {
+                            LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 28)
+                        }
+                    }
+                }
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle")

@@ -22,8 +22,8 @@ public enum Timeline {
     /// Spans are padded to at least `minimumLength` so single events stay visible.
     public static func cluster(
         _ timestamps: [Date],
-        gap: TimeInterval = 5 * 60,
-        minimumLength: TimeInterval = 2 * 60
+        gap: TimeInterval = 8 * 60,
+        minimumLength: TimeInterval = 3 * 60
     ) -> [DateInterval] {
         let sorted = timestamps.sorted()
         guard var start = sorted.first else { return [] }
@@ -60,21 +60,24 @@ public enum Timeline {
         return result.sorted { $0.interval.start < $1.interval.start }
     }
 
-    /// Total active time per app, counting overlapping blocks once.
-    public static func activeDuration(_ blocks: [TimelineBlock], app: AgentApp) -> TimeInterval {
+    /// Overlapping or touching spans of one app merged into continuous runs,
+    /// so parallel sessions draw as one block.
+    public static func merged(_ blocks: [TimelineBlock], app: AgentApp, joiningGap: TimeInterval = 0) -> [DateInterval] {
         let spans = blocks.filter { $0.app == app }.map(\.interval).sorted { $0.start < $1.start }
-        var total: TimeInterval = 0
-        var current: DateInterval?
+        var result: [DateInterval] = []
         for span in spans {
-            if let c = current, span.start <= c.end {
-                current = DateInterval(start: c.start, end: max(c.end, span.end))
+            if let last = result.last, span.start.timeIntervalSince(last.end) <= joiningGap {
+                result[result.count - 1] = DateInterval(start: last.start, end: max(last.end, span.end))
             } else {
-                if let c = current { total += c.duration }
-                current = span
+                result.append(span)
             }
         }
-        if let c = current { total += c.duration }
-        return total
+        return result
+    }
+
+    /// Total active time per app, counting overlapping blocks once.
+    public static func activeDuration(_ blocks: [TimelineBlock], app: AgentApp) -> TimeInterval {
+        merged(blocks, app: app).reduce(0) { $0 + $1.duration }
     }
 
     /// The visible hour range for a day's blocks: at least `minimumHours`, ending

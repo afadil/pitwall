@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             exit(0)
         }
         let model = AppModel.shared
-        if model.mode.isSnapshotRun { setvbuf(stdout, nil, _IONBF, 0) }
+        if model.mode.isSnapshotRun || model.mode.verbose { setvbuf(stdout, nil, _IONBF, 0) }
         model.mode.applyAppearance()
         model.start()
         if model.mode.isSnapshotRun {

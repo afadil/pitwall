@@ -26,7 +26,7 @@ struct ActivityTimeline: View {
                             .font(Theme.monoSmall)
                             .foregroundStyle(.secondary)
                             .frame(width: 46, alignment: .leading)
-                        track(blocks.filter { $0.app == app }, range: range, height: 30)
+                        track(app, range: range, height: 30)
                     }
                 }
                 HStack(spacing: 12) {
@@ -35,8 +35,8 @@ struct ActivityTimeline: View {
                 }
             } else {
                 // Like the reference: a main row of blocks and a thin row beneath.
-                track(blocks.filter { $0.app == .claude }, range: range, height: 28)
-                thinLane(blocks.filter { $0.app == .codex }, range: range)
+                track(.claude, range: range, height: 28)
+                thinLane(.codex, range: range)
                 axis(range)
             }
         }
@@ -44,7 +44,12 @@ struct ActivityTimeline: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
-    private func track(_ items: [TimelineBlock], range: DateInterval, height: CGFloat) -> some View {
+    /// Runs to draw for one app: overlaps merged, tiny gaps (under 2% of the range) closed.
+    private func runs(_ app: AgentApp, range: DateInterval) -> [DateInterval] {
+        Timeline.merged(blocks, app: app, joiningGap: range.duration * 0.02)
+    }
+
+    private func track(_ app: AgentApp, range: DateInterval, height: CGFloat) -> some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             ZStack(alignment: .leading) {
@@ -57,10 +62,10 @@ struct ActivityTimeline: View {
                         .frame(width: 0.5)
                         .offset(x: x(hour, range: range, width: width))
                 }
-                ForEach(items) { block in
-                    let start = x(block.interval.start, range: range, width: width)
-                    let end = x(block.interval.end, range: range, width: width)
-                    Pad(color: block.app.tint)
+                ForEach(runs(app, range: range), id: \.start) { run in
+                    let start = x(run.start, range: range, width: width)
+                    let end = x(run.end, range: range, width: width)
+                    Pad(color: app.tint)
                         .frame(width: max(6, end - start), height: height)
                         .offset(x: start)
                 }
@@ -73,16 +78,16 @@ struct ActivityTimeline: View {
         .frame(height: height)
     }
 
-    private func thinLane(_ items: [TimelineBlock], range: DateInterval) -> some View {
+    private func thinLane(_ app: AgentApp, range: DateInterval) -> some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.primary.opacity(0.05))
-                ForEach(items) { block in
-                    let start = x(block.interval.start, range: range, width: width)
-                    let end = x(block.interval.end, range: range, width: width)
+                ForEach(runs(app, range: range), id: \.start) { run in
+                    let start = x(run.start, range: range, width: width)
+                    let end = x(run.end, range: range, width: width)
                     Capsule()
-                        .fill(block.app.tint)
+                        .fill(app.tint)
                         .frame(width: max(6, end - start))
                         .offset(x: start)
                 }

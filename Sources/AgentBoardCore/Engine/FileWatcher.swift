@@ -50,16 +50,28 @@ public final class FileWatcher: @unchecked Sendable {
     }
 
     /// Paths under the agent data folders that should trigger a re-read.
+    /// FSEvents reports resolved paths (`/private/var/…`), so both the given and
+    /// the symlink-resolved form of each folder are accepted.
     public static func relevantFilter(paths: DataPaths) -> @Sendable (String) -> Bool {
-        let sessions = paths.claudeSessions.path
-        let projects = paths.claudeProjects.path
-        let codexHome = paths.codexHome.path
-        let codexSessions = paths.codexSessions.path
+        // `URL.resolvingSymlinksInPath` strips `/private`, so use realpath(3).
+        func forms(_ url: URL) -> [String] {
+            var result = [url.path]
+            if let resolved = realpath(url.path, nil) {
+                result.append(String(cString: resolved))
+                free(resolved)
+            }
+            return Array(Set(result))
+        }
+        let sessions = forms(paths.claudeSessions)
+        let projects = forms(paths.claudeProjects)
+        let codexHome = forms(paths.codexHome)
+        let codexSessions = forms(paths.codexSessions)
         return { path in
-            if path.hasPrefix(sessions) { return path.hasSuffix(".json") }
-            if path.hasPrefix(projects) { return path.hasSuffix(".jsonl") }
-            if path.hasPrefix(codexSessions) { return path.hasSuffix(".jsonl") }
-            if path.hasPrefix(codexHome) {
+            func under(_ prefixes: [String]) -> Bool { prefixes.contains { path.hasPrefix($0 + "/") } }
+            if under(sessions) { return path.hasSuffix(".json") }
+            if under(projects) { return path.hasSuffix(".jsonl") }
+            if under(codexSessions) { return path.hasSuffix(".jsonl") }
+            if under(codexHome) {
                 let name = (path as NSString).lastPathComponent
                 return name.hasPrefix("state_") && name.contains(".sqlite")
             }
