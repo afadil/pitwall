@@ -127,12 +127,19 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         return "\(repoName) · \(branch)"
     }
 
+    /// Compact `name · branch` for cards, where the owner is mostly repetition.
+    public var shortLocationLine: String {
+        let repoName = repo?.name ?? directory.map { ($0 as NSString).lastPathComponent } ?? "No repository"
+        guard let branch else { return repoName }
+        return "\(repoName) · \(branch)"
+    }
+
     public var problems: [String] {
         sessions.compactMap(\.problem)
     }
 }
 
-public struct Board: Sendable {
+public struct Board: Sendable, Equatable {
     /// Visible tasks, already filtered and sorted newest first.
     public var tasks: [BoardTask]
     /// Every repo seen, including excluded ones, for Settings.
@@ -146,6 +153,11 @@ public struct Board: Sendable {
     }
 
     public static let empty = Board(tasks: [], repos: [], generatedAt: .distantPast)
+
+    /// Same tasks and repos, regardless of when the board was built.
+    public static func == (lhs: Board, rhs: Board) -> Bool {
+        lhs.tasks == rhs.tasks && lhs.repos == rhs.repos
+    }
 
     public func tasks(in column: BoardColumn) -> [BoardTask] {
         tasks.filter { $0.column == column }
