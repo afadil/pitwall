@@ -166,26 +166,36 @@ struct TaskCard: View {
     }
 }
 
-/// `repo · branch`, where the branch keeps its space and the repo name gives way first.
+/// `repo · branch`. When it doesn't fit, the repo name shortens to a prefix and the
+/// branch truncates in the middle, so both stay recognisable.
 private struct LocationLine: View {
     let task: BoardTask
 
+    private var repoName: String {
+        task.repo?.name ?? task.directory.map { ($0 as NSString).lastPathComponent } ?? "No repository"
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
-            Text(task.repo?.name ?? task.directory.map { ($0 as NSString).lastPathComponent } ?? "No repository")
-                .truncationMode(.tail)
-            if let branch = task.branch {
-                Text(" · ")
-                Text(branch)
-                    .truncationMode(.middle)
-                    .layoutPriority(1)
-            }
+        ViewThatFits(in: .horizontal) {
+            line(repo: repoName).fixedSize()
+            line(repo: repoName.count > 7 ? String(repoName.prefix(6)) + "…" : repoName)
         }
         .font(Theme.mono)
         .foregroundStyle(.secondary)
         .lineLimit(1)
         .help(task.locationLine)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(task.locationLine)
+    }
+
+    private func line(repo: String) -> some View {
+        HStack(spacing: 0) {
+            Text(repo).fixedSize()
+            if let branch = task.branch {
+                Text(" · ").fixedSize()
+                Text(branch).truncationMode(.middle)
+            }
+        }
     }
 }
 

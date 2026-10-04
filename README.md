@@ -12,9 +12,9 @@ bar panel.
 | ![Overview](docs/screenshots/demo-dark-overview.png) | ![Panel](docs/screenshots/demo-dark-panel.png) |
 
 More in [docs/screenshots](docs/screenshots), in dark and light mode. They use synthetic
-demo data and were rendered in-process (`Scripts/snapshots.sh` falls back to that when
-screen capture isn't available), so translucent areas show their flat fallback colour
-rather than the live blur, and controls render in their inactive-window style.
+demo data, captured from the running app with `Scripts/snapshots.sh` over the app's own
+synthetic backdrop. The window under capture isn't key, so switches and prominent
+buttons show their inactive-window style.
 
 ## Requirements
 
