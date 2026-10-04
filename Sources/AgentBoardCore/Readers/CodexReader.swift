@@ -147,7 +147,10 @@ public final class CodexReader {
                 isArchived: (row["archived"] as? Int64).map { $0 != 0 } ?? false
             )
 
-            if let path = row.string("rollout_path") {
+            if session.isArchived {
+                // Archived threads are hidden by default and their rollouts move; skip the read.
+                session.turn = .ended
+            } else if let path = row.string("rollout_path") {
                 let url = URL(filePath: path)
                 let activeToday = (updated ?? .distantPast) >= startOfDay
                     || (FileStamp(url)?.modified ?? .distantPast) >= startOfDay
@@ -161,11 +164,8 @@ public final class CodexReader {
                     session.activity = Timeline.cluster(summary.activityTimestamps)
                     if summary.turn == .running { session.lastWrite = FileStamp(url)?.modified }
                 } catch {
-                    // Archived threads move to archived_sessions; only flag active ones.
-                    if !session.isArchived {
-                        session.problem = FileManager.default.fileExists(atPath: path) ? "Can't read rollout" : "Can't find rollout"
-                        rolloutProblems += 1
-                    }
+                    session.problem = FileManager.default.fileExists(atPath: path) ? "Can't read rollout" : "Can't find rollout"
+                    rolloutProblems += 1
                 }
             }
             sessions.append(session)

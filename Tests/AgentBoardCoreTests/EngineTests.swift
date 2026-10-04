@@ -45,7 +45,8 @@ struct EngineTests {
         #expect(columns[.waiting] == ["Explain the sync protocol", "Draft release notes"])
         #expect(columns[.inReview] == ["Fix CSV export rounding"])
         #expect(columns[.ready] == nil)
-        #expect(columns[.done] == ["Theme tokens"])
+        // The flaky-upload session moved back to main, but the app recorded its PR #40.
+        #expect(columns[.done] == ["fix(upload): retry on 503", "Theme tokens"])
 
         let sync = try #require(board.tasks.first { $0.id == "github.com/acme/orbit#feat/offline-sync" })
         #expect(sync.apps == [.claude, .codex])
@@ -59,6 +60,13 @@ struct EngineTests {
         let flaky = try #require(board.tasks.first { $0.title == "Investigate flaky upload test" })
         #expect(flaky.isDefaultBranch)
         #expect(flaky.pullRequest == nil)
+
+        let linked = try #require(board.tasks.first { $0.id == "github.com/acme/orbit#fix/flaky-upload" })
+        #expect(linked.pullRequest?.number == 40)
+        #expect(linked.linkedSessionIDs == [flaky.sessions[0].id])
+        #expect(linked.onBranchSessions.isEmpty)
+        // The dismissed link (#35, chore/deps) never becomes a card.
+        #expect(!board.tasks.contains { $0.branch == "chore/deps" })
     }
 
     @Test func readingNeverChangesAgentData() async throws {

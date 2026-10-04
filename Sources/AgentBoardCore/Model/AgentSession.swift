@@ -24,6 +24,20 @@ public enum TurnState: String, Sendable, Codable, Hashable {
     case unknown
 }
 
+/// A pull request the app itself recorded for a session (Claude's `prs` metadata).
+/// Lets a PR stay linked to its session after the checkout moves to another branch.
+public struct LinkedPullRequest: Sendable, Hashable {
+    public var repo: RepoID
+    public var branch: String
+    public var number: Int?
+
+    public init(repo: RepoID, branch: String, number: Int?) {
+        self.repo = repo
+        self.branch = branch
+        self.number = number
+    }
+}
+
 /// One Claude session or Codex thread, normalised.
 public struct AgentSession: Sendable, Identifiable, Hashable {
     public var app: AgentApp
@@ -49,6 +63,7 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
     public var activity: [DateInterval]
     /// A short "can't read …" note when part of this session could not be parsed.
     public var problem: String?
+    public var linkedPullRequests: [LinkedPullRequest]
 
     public init(
         app: AgentApp,
@@ -65,7 +80,8 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
         turn: TurnState = .unknown,
         lastWrite: Date? = nil,
         activity: [DateInterval] = [],
-        problem: String? = nil
+        problem: String? = nil,
+        linkedPullRequests: [LinkedPullRequest] = []
     ) {
         self.app = app
         self.sessionID = sessionID
@@ -82,6 +98,7 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
         self.lastWrite = lastWrite
         self.activity = activity
         self.problem = problem
+        self.linkedPullRequests = linkedPullRequests
     }
 
     public var id: String { "\(app.rawValue):\(sessionID)" }

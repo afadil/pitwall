@@ -8,7 +8,47 @@
   "lastActivityAt": 1791126900000,
   "cwd": "/Users/dev/work/orbit",
   "originCwd": "/Users/dev/work/orbit",
-  "gitAnchors": [{"gitRoot": "/Users/dev/work/orbit", "commonDir": "/Users/dev/work/orbit/.git", "trustedAt": 1791118800000}],
+  "gitAnchors": [
+    {
+      "gitRoot": "/Users/dev/work/orbit",
+      "commonDir": "/Users/dev/work/orbit/.git",
+      "trustedAt": 1791118800000
+    }
+  ],
   "completedTurns": 12,
-  "model": "claude-model-x"
+  "model": "claude-model-x",
+  "prs": [
+    {
+      "prNumber": 40,
+      "repo": "acme/orbit",
+      "host": "github.com",
+      "provider": "github",
+      "url": "https://github.com/acme/orbit/pull/40",
+      "branch": "fix/flaky-upload",
+      "state": "MERGED",
+      "own": true,
+      "baseRef": "main"
+    },
+    {
+      "prNumber": 35,
+      "repo": "acme/orbit",
+      "host": "github.com",
+      "provider": "github",
+      "url": "https://github.com/acme/orbit/pull/35",
+      "branch": "chore/deps",
+      "state": "OPEN",
+      "dismissed": true
+    },
+    {
+      "prNumber": 3,
+      "repo": "acme/orbit",
+      "host": "gitlab.example.com",
+      "provider": "gitlab",
+      "branch": "feat/elsewhere",
+      "state": "OPEN"
+    }
+  ],
+  "writtenBranches": [
+    "/Users/dev/work/orbit\u0000fix/flaky-upload"
+  ]
 }

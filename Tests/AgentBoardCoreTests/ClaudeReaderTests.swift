@@ -118,6 +118,8 @@ struct ClaudeReaderTests {
 
         let flaky = try #require(byTitle["Investigate flaky upload test"])
         #expect(flaky.branch == "main")
+        // Dismissed and non-GitHub PR links are dropped.
+        #expect(flaky.linkedPullRequests == [LinkedPullRequest(repo: RepoID(host: "github.com", owner: "acme", name: "orbit"), branch: "fix/flaky-upload", number: 40)])
         #expect(flaky.turn == .running) // the sidechain end_turn is ignored
         #expect(flaky.lastWrite != nil)
 

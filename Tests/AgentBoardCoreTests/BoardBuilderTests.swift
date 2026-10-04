@@ -93,6 +93,39 @@ struct BoardBuilderTests {
         #expect(excluded.repos.map(\.key).contains("github.com/acme/lumen"))
     }
 
+    @Test func linkedPullRequestsFollowTheirSessionAcrossBranches() throws {
+        // The session opened PR #12 on feat/a, then its checkout moved to feat/b and it kept working.
+        var session = AgentSession.make(id: "s", title: "Session title", branch: "feat/b", lastActivity: testNow.addingTimeInterval(-60), turn: .running)
+        session.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "feat/a", number: 12)]
+        let pr = PullRequest.make(12, branch: "feat/a", review: .approved, updated: testNow.addingTimeInterval(-7200))
+        let board = build([session], prs: ["acme/orbit": [pr]])
+        #expect(board.tasks.count == 2)
+
+        let current = try #require(board.tasks.first { $0.branch == "feat/b" })
+        #expect(current.column == .working)
+        let linked = try #require(board.tasks.first { $0.branch == "feat/a" })
+        // The running turn is on feat/b, so the PR card is not "Working".
+        #expect(linked.column == .ready)
+        #expect(linked.title == "PR 12")
+        #expect(linked.lastActivity == nil)
+        #expect(linked.linkedSessionIDs == [session.id])
+    }
+
+    @Test func linkWithoutAKnownPRMakesNoCard() {
+        var session = AgentSession.make(id: "s", branch: "main")
+        session.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "feat/gone", number: 99)]
+        #expect(build([session]).tasks.map(\.id) == ["session:claude:s"])
+    }
+
+    @Test func forkPRLinkedByTheAppStillMatches() throws {
+        // A maintainer session worked on a contributor's fork PR; the app linked it by number.
+        var session = AgentSession.make(id: "s", branch: "main")
+        session.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "fix/contrib", number: 77)]
+        let pr = PullRequest.make(77, branch: "fix/contrib", crossRepo: true, headOwner: "contributor")
+        let task = try #require(build([session], prs: ["acme/orbit": [pr]]).tasks.first { $0.branch == "fix/contrib" })
+        #expect(task.pullRequest?.number == 77)
+    }
+
     @Test func tasksWithOldFinishedPRsLeaveTheBoard() {
         let s = AgentSession.make(id: "a", branch: "fix/date-parsing", lastActivity: testNow.addingTimeInterval(-20 * 86400))
         let pr = PullRequest.make(38, branch: "fix/date-parsing", state: .merged, finished: testNow.addingTimeInterval(-14 * 86400))

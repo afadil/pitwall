@@ -48,6 +48,10 @@ public actor RepoResolver {
     }
 
     public func resolve(_ session: AgentSession, now: Date = Date()) async -> ResolvedRepo? {
+        // Without a branch or a recorded remote the folder isn't a git checkout as far
+        // as the apps know, so don't run git there (it may be a privacy-protected
+        // folder such as ~/Documents, where git would wait for permission).
+        guard session.branch != nil || session.originURL != nil else { return nil }
         let directories = ([session.cwd] + session.fallbackDirectories.map(Optional.some))
             .compactMap { $0 }
             .filter { !$0.isEmpty }

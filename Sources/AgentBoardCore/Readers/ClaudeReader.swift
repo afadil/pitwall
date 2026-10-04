@@ -13,6 +13,8 @@ public struct ClaudeSessionMetadata: Sendable, Hashable {
     public var gitRoots: [String]
     /// Present on worktree sessions in newer app versions.
     public var branch: String?
+    /// Pull requests the app linked to this session (`prs`), minus dismissed ones.
+    public var pullRequests: [LinkedPullRequest]
 
     /// Parses one session file. Unknown keys are ignored; wrong types become nil.
     public static func parse(_ data: Data, fallbackID: String) -> ClaudeSessionMetadata? {
@@ -28,8 +30,21 @@ public struct ClaudeSessionMetadata: Sendable, Hashable {
             cwd: object.string("cwd"),
             originCwd: object.string("originCwd"),
             gitRoots: anchors.compactMap { $0.string("gitRoot") },
-            branch: object.string("branch")
+            branch: object.string("branch"),
+            pullRequests: ((object["prs"] as? [[String: Any]]) ?? []).compactMap(linkedPullRequest)
         )
+    }
+
+    /// `{prNumber, repo: "owner/name", host, branch, dismissed?}` → link, GitHub only.
+    static func linkedPullRequest(_ entry: [String: Any]) -> LinkedPullRequest? {
+        guard entry.bool("dismissed") != true,
+              let slug = entry.string("repo"), let branch = entry.string("branch") else { return nil }
+        let host = entry.string("host") ?? "github.com"
+        guard host.lowercased() == "github.com" else { return nil }
+        let parts = slug.split(separator: "/").map(String.init)
+        guard parts.count == 2 else { return nil }
+        let number = (entry["prNumber"] as? NSNumber)?.intValue
+        return LinkedPullRequest(repo: RepoID(host: host, owner: parts[0], name: parts[1]), branch: branch, number: number)
     }
 }
 
@@ -113,7 +128,8 @@ public final class ClaudeReader {
                 fallbackDirectories: [metadata.originCwd].compactMap { $0 } + metadata.gitRoots,
                 createdAt: metadata.createdAt,
                 lastActivity: metadata.lastActivityAt,
-                isArchived: metadata.isArchived
+                isArchived: metadata.isArchived,
+                linkedPullRequests: metadata.pullRequests
             )
 
             guard let cli = metadata.cliSessionID else {

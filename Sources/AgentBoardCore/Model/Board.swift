@@ -45,8 +45,10 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
     public var repo: RepoID?
     public var branch: String?
     public var isDefaultBranch: Bool
-    /// Newest first.
+    /// Sessions on this branch first (newest first), then sessions linked only by a PR.
     public var sessions: [AgentSession]
+    /// Sessions that opened this task's PR but have since moved to another branch.
+    public var linkedSessionIDs: Set<String>
     public var pullRequest: PullRequest?
     public var column: BoardColumn
     public var reviewReason: ReviewReason?
@@ -58,6 +60,7 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         branch: String?,
         isDefaultBranch: Bool,
         sessions: [AgentSession],
+        linkedSessionIDs: Set<String> = [],
         pullRequest: PullRequest?,
         column: BoardColumn,
         reviewReason: ReviewReason?,
@@ -68,6 +71,7 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         self.branch = branch
         self.isDefaultBranch = isDefaultBranch
         self.sessions = sessions
+        self.linkedSessionIDs = linkedSessionIDs
         self.pullRequest = pullRequest
         self.column = column
         self.reviewReason = reviewReason
@@ -76,12 +80,21 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
 
     public var primarySession: AgentSession? { sessions.first }
 
-    public var title: String {
-        primarySession?.title ?? pullRequest?.title ?? branch ?? "Untitled task"
+    /// Sessions currently on this task's branch.
+    public var onBranchSessions: [AgentSession] {
+        sessions.filter { !linkedSessionIDs.contains($0.id) }
     }
 
+    /// The newest on-branch session's title; for a card that exists only because
+    /// of a linked PR, the PR title describes it better.
+    public var title: String {
+        onBranchSessions.first?.title ?? pullRequest?.title ?? primarySession?.title ?? branch ?? "Untitled task"
+    }
+
+    /// Newest activity on this branch. Linked sessions don't count: their recent
+    /// activity happened on another branch.
     public var lastActivity: Date? {
-        sessions.compactMap(\.lastActivity).max()
+        onBranchSessions.compactMap(\.lastActivity).max()
     }
 
     /// Most recent of session activity and PR updates; used for sorting.
@@ -94,7 +107,7 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
     }
 
     public var isTurnRunning: Bool {
-        sessions.contains { $0.turn == .running }
+        onBranchSessions.contains { $0.turn == .running }
     }
 
     public var isArchived: Bool {

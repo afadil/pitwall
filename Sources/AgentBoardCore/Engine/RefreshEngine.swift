@@ -22,6 +22,9 @@ public struct LocalSnapshot: Sendable {
         var slugs = Set<String>()
         for session in sessions {
             if session.isArchived, !settings.showArchived { continue }
+            for link in session.linkedPullRequests where !settings.excludedRepos.contains(link.repo.key) {
+                if let slug = link.repo.githubSlug { slugs.insert(slug) }
+            }
             guard let repo = repos[session.id], !settings.excludedRepos.contains(repo.id.key),
                   let branch = session.branch, !repo.isDefaultBranch(branch) else { continue }
             slugs.formUnion(repo.pullRequestSources)
