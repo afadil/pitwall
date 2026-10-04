@@ -18,6 +18,7 @@ public enum BoardBuilder {
         repos: [String: ResolvedRepo],
         pullRequests: [String: [PullRequest]],
         settings: BoardSettings,
+        organization: Organization = Organization(),
         now: Date
     ) -> Board {
         var groups: [String: Group] = [:]
@@ -66,7 +67,8 @@ public enum BoardBuilder {
             if onBranch.isEmpty, pr == nil { continue }
 
             guard let placement = BoardRules.placement(sessions: onBranch, pullRequest: pr, now: now) else { continue }
-            let hidden = settings.hiddenTaskIDs.contains(id)
+            // `hiddenTaskIDs` in settings predates organization.json; both still count.
+            let hidden = organization.isHidden(id) || settings.hiddenTaskIDs.contains(id)
             if hidden, !settings.showHidden { continue }
             tasks.append(BoardTask(
                 id: id,
@@ -83,6 +85,7 @@ public enum BoardBuilder {
         }
 
         applyStacks(to: &tasks, pullRequests: pullRequests)
+        applyOrganization(organization, to: &tasks)
 
         tasks.sort { lhs, rhs in
             if lhs.sortDate != rhs.sortDate { return lhs.sortDate > rhs.sortDate }
@@ -157,6 +160,27 @@ public enum BoardBuilder {
                 tasks[index].reviewReason = .stacked
             }
             tasks[index].stack = info
+        }
+    }
+
+    /// Lanes and tags from organization.json. A stacked card without its own lane
+    /// takes its stack's (fast first), so a stack moves as one.
+    static func applyOrganization(_ organization: Organization, to tasks: inout [BoardTask]) {
+        var stackLane: [String: Lane] = [:]
+        func stackKey(_ task: BoardTask) -> String? {
+            guard let pr = task.pullRequest, let bottom = task.stack?.members.first else { return nil }
+            return "\(pr.repo.lowercased())#\(bottom)"
+        }
+        for task in tasks {
+            guard let key = stackKey(task), let lane = organization.lane(for: task.id) else { continue }
+            if stackLane[key] != .fast { stackLane[key] = lane }
+        }
+        for index in tasks.indices {
+            let id = tasks[index].id
+            tasks[index].tags = organization.tags(for: id)
+            tasks[index].lane = organization.lane(for: id)
+                ?? stackKey(tasks[index]).flatMap { stackLane[$0] }
+                ?? .normal
         }
     }
 

@@ -29,6 +29,8 @@ struct GHParsingTests {
         #expect(pr.updatedAt == date("2026-10-04T14:31:00Z"))
         #expect(pr.headOwner == "acme")
         #expect(!pr.isCrossRepository)
+        // Labels without a name are dropped.
+        #expect(pr.labels == [PRLabel(name: "enhancement", color: "a2eeef")])
     }
 
     @Test func rerunChecksKeepOnlyTheLatestRun() throws {
@@ -91,7 +93,7 @@ struct GHParsingTests {
         let prs = try await GitHubClient(runner: gh).pullRequests(repo: "acme/orbit")
         #expect(prs.count == 12)
         #expect(prs.contains { $0.number == 7 && $0.headRefName == "feat/ancient" })
-        let fields = "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner"
+        let fields = "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner,labels"
         #expect(Set(gh.recorded.map { $0.joined(separator: " ") }) == [
             "pr list --repo acme/orbit --state all --limit 100 --search sort:updated-desc --json \(fields)",
             "pr list --repo acme/orbit --state open --limit 200 --json \(fields)",

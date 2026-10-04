@@ -74,6 +74,10 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
     public var isHidden: Bool
     /// Set when the PR is part of a stack of two or more open PRs.
     public var stack: StackInfo?
+    /// Your lane for this card (inherited from its stack when not set).
+    public var lane: Lane
+    /// Your tags, in tag-list order.
+    public var tags: [CardTag]
 
     public init(
         id: String,
@@ -86,7 +90,9 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         column: BoardColumn,
         reviewReason: ReviewReason?,
         isHidden: Bool = false,
-        stack: StackInfo? = nil
+        stack: StackInfo? = nil,
+        lane: Lane = .normal,
+        tags: [CardTag] = []
     ) {
         self.id = id
         self.repo = repo
@@ -99,6 +105,8 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         self.reviewReason = reviewReason
         self.isHidden = isHidden
         self.stack = stack
+        self.lane = lane
+        self.tags = tags
     }
 
     public var primarySession: AgentSession? { sessions.first }
@@ -132,6 +140,11 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
 
     public var apps: [AgentApp] {
         Array(Set(sessions.map(\.app))).sorted()
+    }
+
+    /// GitHub labels on this card's PR.
+    public var labels: [PRLabel] {
+        pullRequest?.labels ?? []
     }
 
     public var isTurnRunning: Bool {

@@ -7,7 +7,7 @@ public struct GitHubClient: Sendable {
     public static let pullRequestFields = [
         "number", "title", "url", "headRefName", "headRefOid", "baseRefName", "state", "isDraft",
         "reviewDecision", "statusCheckRollup", "mergedAt", "closedAt", "updatedAt",
-        "isCrossRepository", "headRepositoryOwner",
+        "isCrossRepository", "headRepositoryOwner", "labels",
     ].joined(separator: ",")
 
     public init(runner: GHRunning) {

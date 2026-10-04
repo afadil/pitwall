@@ -20,7 +20,7 @@
     "title": "feat(sync): queue offline edits",
     "updatedAt": "2026-10-04T14:31:00Z",
     "url": "https://github.com/acme/orbit/pull/42",
-    "labels": [{"name": "enhancement"}]
+    "labels": [{"id": "LA_synth1", "name": "enhancement", "description": "New feature", "color": "a2eeef"}, {"name": ""}, {"color": "ffffff"}]
   },
   {
     "baseRefName": "main", "closedAt": "2026-10-01T09:00:00Z", "headRefName": "feat/offline-sync",

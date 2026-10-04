@@ -59,6 +59,11 @@ struct RawOwner: Decodable {
     var login: String?
 }
 
+struct RawLabel: Decodable {
+    var name: String?
+    var color: String?
+}
+
 struct RawPullRequest: Decodable {
     var number: Int?
     var title: String?
@@ -75,6 +80,7 @@ struct RawPullRequest: Decodable {
     var updatedAt: String?
     var isCrossRepository: Bool?
     var headRepositoryOwner: RawOwner?
+    var labels: [Lenient<RawLabel>]?
 
     func pullRequest(repo: String) -> PullRequest? {
         guard let number, let headRefName, !headRefName.isEmpty else { return nil }
@@ -105,7 +111,10 @@ struct RawPullRequest: Decodable {
             closedAt: PRParsing.date(closedAt),
             updatedAt: PRParsing.date(updatedAt),
             isCrossRepository: isCrossRepository ?? false,
-            headOwner: headRepositoryOwner?.login
+            headOwner: headRepositoryOwner?.login,
+            labels: (labels ?? []).compactMap(\.value).compactMap { raw in
+                raw.name.flatMap { $0.isEmpty ? nil : PRLabel(name: $0, color: raw.color) }
+            }
         )
     }
 }

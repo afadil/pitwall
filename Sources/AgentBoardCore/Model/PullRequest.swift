@@ -46,6 +46,18 @@ public struct CheckSummary: Sendable, Codable, Hashable {
     }
 }
 
+/// A GitHub label on a pull request (read-only here).
+public struct PRLabel: Sendable, Codable, Hashable {
+    public var name: String
+    /// Hex colour without `#`, as GitHub stores it.
+    public var color: String?
+
+    public init(name: String, color: String? = nil) {
+        self.name = name
+        self.color = color
+    }
+}
+
 public struct PullRequest: Sendable, Codable, Hashable, Identifiable {
     /// `owner/name` of the repository the PR was opened against.
     public var repo: String
@@ -65,6 +77,7 @@ public struct PullRequest: Sendable, Codable, Hashable, Identifiable {
     public var isCrossRepository: Bool
     /// Login of the account that owns the head branch's repository.
     public var headOwner: String?
+    public var labels: [PRLabel]
 
     public init(
         repo: String,
@@ -82,7 +95,8 @@ public struct PullRequest: Sendable, Codable, Hashable, Identifiable {
         closedAt: Date? = nil,
         updatedAt: Date? = nil,
         isCrossRepository: Bool = false,
-        headOwner: String? = nil
+        headOwner: String? = nil,
+        labels: [PRLabel] = []
     ) {
         self.repo = repo
         self.number = number
@@ -100,6 +114,7 @@ public struct PullRequest: Sendable, Codable, Hashable, Identifiable {
         self.updatedAt = updatedAt
         self.isCrossRepository = isCrossRepository
         self.headOwner = headOwner
+        self.labels = labels
     }
 
     public var id: String { "\(repo)#\(number)" }
