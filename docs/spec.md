@@ -1,5 +1,9 @@
 # Pitwall: product spec
 
+> The original brief Pitwall was built from. What the formats turned out to be,
+> and the rules the app actually applies, are in [architecture.md](architecture.md)
+> and the [README](../README.md).
+
 A small native macOS app that shows the work I do in the **Claude desktop app**
 and the **Codex desktop app** as a kanban board, with each task's GitHub pull
 request, CI and review state. Both a main window and a menu bar panel.
@@ -19,7 +23,7 @@ request, CI and review state. Both a main window and a menu bar panel.
 - Starting or steering agent sessions.
 - Any network access other than `gh` talking to GitHub. No telemetry.
 
-## Data sources (verified on this Mac, 2026-10-04)
+## Data sources (verified against both apps, October 2026)
 
 All formats are internal to each app and undocumented. Parse tolerantly, ignore
 unknown fields, and show a clear "can't read …" state instead of crashing when a
@@ -96,17 +100,15 @@ relative last activity, PR number, CI state, review state.
 ## Design direction
 
 Follow Apple's Human Interface Guidelines (https://developer.apple.com/design/)
-and the references in `design/references/`:
+and three style references:
 
-- `menubar-panel-systemos.png`: compact dark panel. Segmented control, large
-  numerals, a timeline strip of colored blocks, a "needs review" callout with
-  inline actions, and dense rows with icons and right-aligned durations. Model the
-  **menu bar panel** on this.
-- `tactile-controls-sequencer.png`: warm orange accent on deep charcoal, soft
-  rounded tactile controls, small monospace labels.
-- `window-overview-prs.webp`: translucent sidebar window, icon rail, big "Overview"
-  title, stat cards, a list of today's PRs. Model the **main window** chrome and an
-  Overview screen on this.
+- A compact dark menu bar panel: segmented control, large numerals, a timeline
+  strip of colored blocks, a "needs review" callout with inline actions, and dense
+  rows with icons and right-aligned durations. Model the **menu bar panel** on this.
+- A step-sequencer concept: warm orange accent on deep charcoal, soft rounded
+  tactile controls, small monospace labels.
+- A translucent overview window: icon rail, big "Overview" title, stat cards, a
+  list of today's PRs. Model the **main window** chrome and an Overview screen on this.
 
 Principles: dark-first that still works in light mode; system materials (vibrancy)
 over flat fills; one warm accent with semantic colors kept for CI and review
@@ -126,5 +128,5 @@ Screens:
 
 - Builds and launches from the command line with no manual Xcode steps.
 - Readers, rules and the GitHub matching are covered by unit tests using synthetic fixtures.
-- Against the real data on this Mac, the session counts and titles match what the Claude and Codex apps show, and PR states match GitHub.
+- Against real data, the session counts and titles match what the Claude and Codex apps show, and PR states match GitHub.
 - Screenshots of every screen in dark and light mode are reviewed before calling it done.

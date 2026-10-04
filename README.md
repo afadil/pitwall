@@ -1,266 +1,198 @@
-# Pitwall
+<p align="center">
+  <img src="docs/images/app-icon.png" width="128" alt="Pitwall icon">
+</p>
 
-A native macOS app that shows your Claude desktop and Codex desktop sessions as a
-kanban board: one card per repository and branch, with the pull request, CI and
-review state for each. There's a main window (Board, Overview, Settings) and a menu
-bar panel.
+<h1 align="center">Pitwall</h1>
 
-![Board, dark](docs/screenshots/demo-dark-board.png)
+<p align="center">
+  A pit wall for your coding agents.<br>
+  See every Claude and Codex session as a task on one board, with its pull request, CI and review state.
+</p>
 
-| Overview | Menu bar panel |
+<p align="center">
+  macOS 26+ · Swift 6.2 · SwiftUI · MIT
+</p>
+
+![Pitwall board with the details panel](docs/screenshots/dark-board-inspector.png)
+
+If you run several coding agents at once, the hard part is knowing which one needs
+you. Pitwall reads the session data of the **Claude desktop app** and the **Codex
+desktop app**, groups sessions into tasks (one per repository and branch), and shows
+them on a kanban board next to each task's GitHub pull request. It runs as a window
+and as a menu bar panel, reads everything locally, and never writes to either app's
+data.
+
+## Features
+
+- **One card per task.** Claude and Codex sessions on the same branch share a card.
+- **Automatic columns.** Working, Waiting on you, In review, Ready to merge and Done,
+  from each agent's turn state and the PR's draft, CI and review state.
+- **Stacked PRs understood.** A stack moves through the board as one piece of work, and
+  only its bottom PR shows as ready to merge.
+- **Lanes and tags.** A fast lane for what's urgent, Later for parking, as many tags as
+  you like, GitHub labels, filtering by any or all tags, and grouping by lane, tag or
+  repository.
+- **Actions.** Open a session in Claude or Codex, open the PR or folder, copy the resume
+  command, and mark ready or merge through `gh`, behind a confirmation that shows the
+  exact command.
+- **Menu bar panel.** How many tasks are waiting on you, today's activity, and one-click
+  jumps back into the session.
+- **Native and accessible.** SwiftUI with system materials, dark and light mode,
+  VoiceOver labels and actions, full keyboard control, Reduce Motion and Reduce
+  Transparency.
+
+## Screenshots
+
+| | |
 | --- | --- |
-| ![Overview](docs/screenshots/demo-dark-overview.png) | ![Panel](docs/screenshots/demo-dark-panel.png) |
+| ![Board grouped by tag, light](docs/screenshots/light-board.png) | ![Overview](docs/screenshots/dark-overview.png) |
+| Grouped by tag, light mode | Overview: counts and today's activity |
+| ![Menu bar panel](docs/screenshots/dark-panel.png) | ![Merge confirmation](docs/screenshots/dark-merge-sheet.png) |
+| Menu bar panel | Every GitHub write is confirmed first |
+| ![Settings](docs/screenshots/dark-settings.png) | ![Board, dark](docs/screenshots/dark-board.png) |
+| Settings, with each data source's status | Lanes: fast lane, normal, later |
 
-More in [docs/screenshots](docs/screenshots), in dark and light mode. They use synthetic
-demo data, captured from the running app with `Scripts/snapshots.sh` over the app's own
-synthetic backdrop. The window under capture isn't key, so switches and prominent
-buttons show their inactive-window style.
+Screenshots use the built-in demo data (`--demo`).
 
-## Requirements
+## Install
 
-- macOS 26 or later (built and tested on macOS 27 with Xcode 27 / Swift 6.4)
-- The [GitHub CLI](https://cli.github.com), signed in (`gh auth login`), for PR data.
-  The board still works without it.
+Pitwall builds from source with the Swift toolchain; no Xcode project is needed.
 
-## Build, test and run
+Requirements:
 
-Everything runs from the command line. There's no Xcode project; it's a Swift package.
+- macOS 26 or later and the Xcode command-line tools. The package targets Swift 6.2;
+  it's built and tested with Xcode 27 (Swift 6.4).
+- The [GitHub CLI](https://cli.github.com), signed in with `gh auth login`, for PR data.
+  The board works without it.
 
 ```bash
-swift test                      # unit tests (core module, synthetic fixtures)
-Scripts/build-app.sh            # builds build/Pitwall.app (release)
-open "build/Pitwall.app"    # launch
+git clone https://github.com/afadil/pitwall.git
+cd pitwall
+make run          # builds build/Pitwall.app and opens it
 ```
 
-Other commands:
+`make app` builds the bundle without opening it. Copy `build/Pitwall.app` to
+`/Applications` to keep it. The bundle is ad-hoc signed; on first launch macOS may ask
+you to confirm opening it.
+
+Try it without your own data:
 
 ```bash
-swift run pitwall-check            # read-only: print what the board sees on this Mac
-swift run pitwall-check --json     # same, as JSON
-Scripts/build-app.sh debug            # debug build of the app bundle
-Scripts/make-icon.sh                  # regenerate Resources/AppIcon.icns from IconArt.swift
-Scripts/snapshots.sh <dir> --demo --appearance dark   # screenshot every screen
+open build/Pitwall.app --args --demo
 ```
 
-Launch options (pass after `--args` with `open`, or directly to the binary):
-`--demo` uses synthetic data and never touches disk or GitHub, `--appearance dark|light`
-forces an appearance, and `--verbose` logs refreshes.
+## Using it
 
-## What it reads
+### Columns
 
-Everything is read-only. Pitwall never writes to, moves or deletes anything in
-these folders.
+Columns are automatic. You never drag a card between them.
 
-| Source | Path | What's used |
-| --- | --- | --- |
-| Claude sessions | `~/Library/Application Support/Claude/claude-code-sessions/*/*/local_*.json` | title, archived, times, cwd, git roots, PRs the app linked |
-| Claude transcripts | `~/.claude/projects/<encoded cwd>/<cliSessionId>.jsonl` | the **tail** only: latest `gitBranch`, turn state, today's activity |
-| Codex threads | `~/.codex/state_<n>.sqlite`, table `threads` (highest `n`) | name or title, cwd, branch, origin URL, archived, times |
-| Codex rollouts | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | the **tail** only: `task_started` / `task_complete` |
-| GitHub | `gh pr list` | per repo, every refresh: the 100 most recently updated PRs and all open PRs |
-
-Details that matter:
-
-- **Tails only.** Transcripts are read from the end: 256 KB for state, 2 MB for
-  sessions active today (for the timeline), growing to at most 8 MB only if a single
-  huge line hides everything. Parsed results are cached by file size and modification
-  date, so unchanged files aren't read again.
-- **SQLite without side effects.** When Codex's database has no `-wal` file (or an
-  empty one), it's opened `SQLITE_OPEN_READONLY` with `immutable=1`: no locks, and no
-  `-wal`/`-shm` files created. While Codex is writing (non-empty `-wal`), even a
-  read-only connection would update the `-shm` index, so instead the database and its
-  WAL are copied to a private temporary folder, read, and deleted.
-- **git** is used read-only to find a folder's remote and default branch
-  (`git config --get-regexp`, `git symbolic-ref`, `git rev-parse`), with
-  `GIT_OPTIONAL_LOCKS=0`. Folders with no branch and no remote are skipped, which also
-  keeps git out of privacy-protected folders such as `~/Documents`.
-- **Refresh.** FSEvents watches the session folders, and changes are coalesced into a
-  local re-read (about 40 ms with warm caches). GitHub is polled every 60 seconds by
-  default (configurable), and on demand with ⌘R.
-- **Network.** The app reaches the network only through `gh`, using your existing
-  login. No tokens are read or stored. No telemetry, analytics or update checks.
-
-## What it stores
-
-Pitwall keeps no copy of your sessions or PRs; it reads them on every refresh.
-It writes only two things, both in its own places:
-
-- Preferences in macOS user defaults (`~/Library/Preferences/com.teymz.pitwall.plist`).
-- Your organization in `~/Library/Application Support/Pitwall/organization.json`:
-  tags, each card's lane, tags and hidden flag, keyed by task (repo and branch), so they
-  carry over to new sessions on the same branch. It's plain JSON, written atomically.
-  Malformed parts are skipped on load, an unreadable file is kept aside rather than
-  overwritten, and entries for cards gone for 30 days are cleaned up. Settings shows its
-  path and status.
-
-## Board rules
-
-A **task** is one (repository, branch). Claude and Codex sessions on the same branch
-share a card. Sessions on the default branch, with no branch, or outside any
-repository each get their own card. Archived sessions are hidden unless
-**Show archived** is on.
-
-| Column | Rule |
+| Column | When |
 | --- | --- |
-| Working | A session's turn is running (and it wrote within the last 10 minutes), or a session is working on another PR in the same stack (the card says "via #N") |
+| Working | A session's turn is running, or another PR in the same stack is being worked on ("via #N") |
 | Waiting on you | The turn ended and there's no PR |
-| In review | Open PR that is a draft, has failing or running CI, has changes requested, is awaiting a required review, or is stacked on another open PR. The card says which. |
-| Ready to merge | Open PR, approved or no review required, CI green (or no CI) |
-| Done | PR merged or closed in the last 7 days. Older ones leave the board. |
+| In review | The PR is a draft, CI is failing or running, changes were requested, a review is required, or it's stacked on another open PR |
+| Ready to merge | The PR is approved or needs no review, and CI is green or absent |
+| Done | The PR was merged or closed in the last 7 days |
 
-How turn state is read (checked against the real files on this Mac):
+Sessions on the default branch, without a branch, or outside a repository get a card of
+their own. Archived sessions are hidden unless you turn on **Show archived**.
 
-- **Claude:** a finished turn ends with a `system` line whose `subtype` is
-  `stop_hook_summary`, or an assistant message with `stop_reason: end_turn`.
-  A running turn ends with a user prompt, a tool result, or an assistant `tool_use`.
-  Bookkeeping lines (`last-prompt`, `custom-title`, `mode`, …), sub-agent
-  (`isSidechain`) lines and meta lines are ignored. "Request interrupted by user"
-  ends a turn.
-- **Codex:** the last `event_msg` of type `task_started` (running) versus
-  `task_complete` or `turn_aborted` (ended).
-- When the tail can't tell, activity in the last 3 minutes counts as Working.
+### Lanes and tags
 
-**Stacks.** PRs that target each other's branches (for example `main ← feat/a ← feat/b`)
-form a stack, read from each PR's base branch. A stack is treated as one piece of work.
-While a session works on any card in it, the stack's other open PRs are Working too,
-because agents rebase and force-push the lower PRs as they go. When nobody is working on
-it, only the bottom PR can be Ready to merge, and the others are In review, marked
-"Stacked on #N". The details panel lists the whole stack.
+Rows are yours. **Fast lane** sits on top and warns when it holds more than its limit
+(3 by default). **Normal** is where cards start. **Later** is collapsed, for parking.
+Drag a card to another lane, or use the context menu, the details panel or ⌃1 / ⌃2 / ⌃3.
+Moving one PR of a stack moves the whole stack.
 
-**Lanes and tags.** Columns are automatic; rows are yours. Every card sits in a lane:
-**Fast lane** (on top, tinted, with a limit of 3 by default that warns when exceeded),
-**Normal**, or **Later** (collapsed by default, for parking). Move cards by dragging
-them between lanes, from the context menu, the details panel or the Task menu (⌃1, ⌃2,
-⌃3). The column never changes, and moving one PR of a stack moves the whole stack.
-Cards can carry any number of your own tags (name and colour), and PRs' GitHub labels
-show up too. Filter the board by several tags or labels at once, matching any or all of
-them, and group the rows by lane, tag (a card sits under its first tag) or repository.
-The fast lane stays on top and Later at the bottom in every grouping. Fast-lane cards
-come first in the menu bar panel.
+Add tags from a card's context menu, the details panel or Settings. **Tags** in the
+toolbar filters by one or more tags or GitHub labels, matching any or all of them.
+**By lane** switches the rows to grouping by tag or repository.
 
-PRs are matched by `headRefName == branch`. A cross-repo PR (from a fork) only matches
-when the fork belongs to the checkout's `origin` owner, so someone else's fork with
-the same branch name never matches. If the checkout has an `upstream` remote, PRs
-opened there from your fork match too. Open PRs win over closed ones. The Claude app
-also records the PRs a session opened (`prs` in its metadata). Those PRs keep their
-card after the checkout moves to another branch; such a card never shows as Working,
-since the session is busy elsewhere.
+### Keyboard
 
-## Actions
+| Keys | Action |
+| --- | --- |
+| ⌘1 / ⌘2 / ⌘, | Board / Overview / Settings |
+| Arrow keys | Move between cards |
+| Return, ⌘↓, double-click | Open the session in Claude or Codex |
+| Space | Show or hide details |
+| ⌘O / ⇧⌘O | Open pull request / folder |
+| ⇧⌘C / ⌥⌘C | Copy resume command / branch name |
+| ⌃1 / ⌃2 / ⌃3 | Move to Fast lane / Normal / Later |
+| ⇧⌘M | Merge… (asks first) |
+| ⌘⌫ | Hide or show the card |
+| ⌘R | Refresh |
 
-All actions are in the card's context menu, the details panel, the **Task** menu and
-VoiceOver actions:
+## Privacy and safety
 
-- **Open in Claude or Codex** (double-click a card, Return, or ⌘↓): opens the session
-  in its own app through the app's deep link: `claude://claude.ai/epitaxy/<sessionId>`
-  (the form the Claude app uses for its own session links) or `codex://threads/<thread id>`
-  (a route the Codex app registers). A card with several sessions opens the newest one
-  on its branch; the context menu lists each. In the menu bar panel, clicking a row opens it.
-- Open pull request (⌘O); open folder in Finder, Terminal or your default code editor (⇧⌘O)
-- Copy resume command (⇧⌘C): `cd <folder> && claude --resume <cliSessionId>` or
-  `cd <folder> && codex resume <thread id>`. The `cd` is there because Claude looks up
-  sessions per project folder. The Codex syntax was checked with `codex resume --help`.
-- Copy branch name (⌥⌘C), hide or show card (⌘⌫)
-- Move to Fast lane, Normal or Later (⌃1, ⌃2, ⌃3), or drag; add or remove tags, or
-  create one with "New tag…"
-- **Mark ready for review…** and **Merge…** (⇧⌘M) run `gh pr ready` / `gh pr merge`.
-  Each opens a confirmation sheet that names the PR and shows the exact command.
-  Merges offer only the methods the repo allows and pass `--match-head-commit`, so
-  nothing merges if new commits were pushed after you looked.
+- **Read-only on agent data.** Pitwall never writes to, moves or locks anything in
+  `~/.claude`, `~/Library/Application Support/Claude` or `~/.codex`. Transcripts are read
+  from the end only. Codex's SQLite database is opened read-only and immutable, so no
+  `-wal` or `-shm` files are created next to it.
+- **Network only through `gh`.** No telemetry, analytics or update checks. No tokens
+  are read or stored.
+- **Writes only on confirmation.** Mark ready and merge show the exact `gh` command
+  first, and merges pass `--match-head-commit`.
+- **What it stores.** Preferences in macOS user defaults, and your lanes, tags and
+  hidden cards in `~/Library/Application Support/Pitwall/organization.json`. Nothing else.
 
-Keyboard: ⌘1 Board, ⌘2 Overview, ⌘, Settings, arrow keys move between cards, Return
-opens the session in its app, Space toggles details, Esc closes them, ⌥⌘I shows
-details, ⇧⌘H shows hidden cards.
+## How it works
 
-## Design
+Pitwall reads each app's internal, undocumented files, so parsing is tolerant: a format
+change shows a "can't read …" state in Settings and on the board instead of a crash.
 
-The design follows Apple's Human Interface Guidelines and the references in
-`design/references/`:
+| Source | Path | Used for |
+| --- | --- | --- |
+| Claude sessions | `~/Library/Application Support/Claude/claude-code-sessions/*/*/local_*.json` | Title, archived, times, folder, PRs the app linked |
+| Claude transcripts | `~/.claude/projects/<folder>/<cliSessionId>.jsonl` (tail) | Current branch, turn state, today's activity |
+| Codex threads | `~/.codex/state_<n>.sqlite`, table `threads` | Name, folder, branch, remote, archived, times |
+| Codex rollouts | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` (tail) | Turn state, today's activity |
+| GitHub | `gh pr list`, per repository | PR state, CI checks, review decision, labels |
 
-- **Main window**, after the translucent overview window: behind-window vibrancy, an
-  icon rail, an inset content panel with continuous corners, large titles, stat cards.
-- **Menu bar panel**, after the SystemOS panel: a big count, a segmented control, a
-  two-lane timeline (Claude blocks above a thin Codex bar), a callout with inline
-  actions, and dense rows with right-aligned durations.
-- **Tactile controls**, after the sequencer: one warm orange accent on charcoal, soft
-  rounded pads, small monospaced labels. The app icon is a three-column board of
-  orange and white pads.
+[docs/architecture.md](docs/architecture.md) covers the data flow, turn-state detection,
+PR matching, stacks and the write-confirmation design. [docs/spec.md](docs/spec.md) is
+the original brief.
 
-Principles applied:
+## Development
 
-- Dark first, light mode supported.
-- Semantic colours only for CI and review state (green, red, amber, purple for
-  merged). Claude is orange and Codex is white (black in light mode), on badges and
-  the timeline.
-- SF Pro for UI and SF Mono for branches, counts and timestamps. Hairline separators,
-  sentence case, restrained motion.
-
-Accessibility:
-
-- Every card, row and control has a VoiceOver label (for example "Queue offline edits,
-  acme/orbit, branch feat/offline-sync, Claude and Codex, Working, active 4 minutes
-  ago, pull request 412, Open, CI running"), and cards expose the actions as VoiceOver
-  custom actions.
-- Full keyboard navigation (see above).
-- Reduce Motion turns off the pulse, slide and spring animations.
-- Reduce Transparency switches panels and cards to opaque fills; system materials
-  handle themselves.
-- Text uses system text styles.
-
-## Layout
-
-```
-Sources/PitwallCore/    readers, model, board rules, GitHub client (no UI; unit tested)
-  Readers/                 ClaudeReader, ClaudeTranscript, CodexReader
-  Git/                     RepoResolver (git behind the GitRunning protocol)
-  GitHub/                  GHRunning protocol, GHCLI, GitHubClient, PRParsing, PRMatcher,
-                           GitHubWriter + WriteActionCoordinator (confirmation-gated writes)
-  Board/                   BoardBuilder, BoardRules, Timeline
-  Engine/                  RefreshEngine (actor), FileWatcher (FSEvents)
-  Demo/                    synthetic demo data
-Sources/Pitwall/           SwiftUI app
-Sources/pitwall-check/  read-only real-data check
-Tests/PitwallCoreTests/ unit tests and synthetic fixtures
-Scripts/                   build-app.sh, make-icon.sh, snapshots.sh
+```bash
+make test          # unit tests
+make lint          # swift-format, strict
+make format        # apply swift-format
+make check         # print what the board reads on this Mac (read-only)
+make screenshots   # regenerate docs/screenshots from demo data
+make icon          # regenerate the app icon from Design/IconArt.swift
 ```
 
-## Testing
+The code is split into `PitwallCore` (readers, rules, GitHub, storage; no UI, unit
+tested) and the `Pitwall` SwiftUI app (thin views over `AppModel`). `git` and `gh`
+sit behind protocols, so tests use fakes and never touch GitHub. Test fixtures are
+synthetic. See [AGENTS.md](AGENTS.md) for the rules this project keeps.
 
-`swift test` runs 129 tests. All fixtures are synthetic: hand-written JSON and JSONL
-modelled on the real formats, with a Codex database built at test time. The tests
-cover:
-
-- Claude and Codex readers, including tail-only reading of a 6 MB transcript,
-  malformed lines, missing files and "can't read" states
-- repo and branch resolution (remote URL forms, forks, worktrees, no remote)
-- column rules, task grouping, PR matching and gh JSON parsing
-- write actions: they reach only the fake `gh`, and only after confirmation
-- lanes, tags and organization.json: saving and loading, tolerant decoding, unreadable
-  files, pruning, grouping, filtering by many tags (any or all), stacks moving together
-- a full refresh leaves the fixture folders byte-for-byte unchanged, and the SQLite
-  reader creates no `-wal`/`-shm` files
-- the file watcher
-
-`swift run pitwall-check` compares nothing by itself; it prints what Pitwall
-reads on this Mac so it can be checked against the apps and GitHub.
+The app accepts a few launch options for demos and screenshots: `--demo`,
+`--appearance dark|light` and `--verbose` (logs refreshes).
 
 ## Known limitations
 
 - **Permission prompts look like work.** A Claude turn waiting for tool permission
-  looks the same in the transcript as a running tool. After 10 minutes without writes
-  it moves to "Waiting on you".
-- **Branches come from the session.** Many sessions run in a repo's main checkout, so
-  their branch is whatever that checkout had checked out at the time (Claude: the
-  latest transcript line; Codex: when the thread started). Unrelated threads that
-  happened to share a branch share a card.
-- **GitHub.com only.** PRs are looked up for github.com remotes only. Other hosts show
-  without PR data.
-- **Busy repos.** PR coverage is the 100 most recently updated PRs plus up to 200 open
-  ones. A branch whose PR finished long ago and was untouched since shows as "Waiting
-  on you" until you archive the session or hide the card.
-- **Launch from Finder or `open`.** Running the binary directly from a shell doesn't
-  receive the launch event, so the main window may not open; use `open` or the menu
-  bar item.
-- **Undocumented formats.** Both apps' formats are internal. Parsing is tolerant, and
-  a format change shows a "can't read …" state in Settings and on the board rather
-  than a crash.
+  looks like a running tool in the transcript; after 10 minutes without writes it moves
+  to Waiting on you.
+- **Branches come from the session.** In a shared checkout, a session's branch is
+  whatever was checked out when it last wrote (Claude) or when it started (Codex).
+- **GitHub.com only.** Other hosts appear without PR data.
+- **Busy repositories.** PRs come from the 100 most recently updated plus up to 200
+  open ones per repository.
+- **Launch with `open` or Finder.** Running the binary directly skips the launch event,
+  so the main window may not appear.
+
+## Acknowledgements
+
+The design follows Apple's Human Interface Guidelines and takes cues from a compact
+dark menu bar time tracker, a step-sequencer concept with a warm orange accent, and
+translucent overview windows. Claude and Codex are products of their respective
+owners; Pitwall is an independent project that reads their local data.
+
+## License
+
+[MIT](LICENSE)
