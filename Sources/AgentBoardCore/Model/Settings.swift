@@ -42,6 +42,9 @@ public struct BoardSettings: Sendable, Codable, Hashable {
     public var hiddenTaskIDs: Set<String>
     public var folderOpener: FolderOpener
     public var showMenuBarExtra: Bool
+    public var grouping: Grouping
+    /// Cards the fast lane is meant to hold; the lane header warns above it.
+    public var fastLaneLimit: Int
 
     public init(
         refreshInterval: TimeInterval = 60,
@@ -50,7 +53,9 @@ public struct BoardSettings: Sendable, Codable, Hashable {
         excludedRepos: Set<String> = [],
         hiddenTaskIDs: Set<String> = [],
         folderOpener: FolderOpener = .finder,
-        showMenuBarExtra: Bool = true
+        showMenuBarExtra: Bool = true,
+        grouping: Grouping = .lane,
+        fastLaneLimit: Int = 3
     ) {
         self.refreshInterval = refreshInterval
         self.showArchived = showArchived
@@ -59,6 +64,8 @@ public struct BoardSettings: Sendable, Codable, Hashable {
         self.hiddenTaskIDs = hiddenTaskIDs
         self.folderOpener = folderOpener
         self.showMenuBarExtra = showMenuBarExtra
+        self.grouping = grouping
+        self.fastLaneLimit = fastLaneLimit
     }
 
     public static let refreshChoices: [TimeInterval] = [30, 60, 120, 300]
@@ -74,5 +81,7 @@ public struct BoardSettings: Sendable, Codable, Hashable {
         hiddenTaskIDs = (try? c.decode(Set<String>.self, forKey: .hiddenTaskIDs)) ?? d.hiddenTaskIDs
         folderOpener = (try? c.decode(FolderOpener.self, forKey: .folderOpener)) ?? d.folderOpener
         showMenuBarExtra = (try? c.decode(Bool.self, forKey: .showMenuBarExtra)) ?? d.showMenuBarExtra
+        grouping = (try? c.decode(Grouping.self, forKey: .grouping)) ?? d.grouping
+        fastLaneLimit = max(1, (try? c.decode(Int.self, forKey: .fastLaneLimit)) ?? d.fastLaneLimit)
     }
 }

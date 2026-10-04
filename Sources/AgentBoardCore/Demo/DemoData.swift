@@ -119,9 +119,36 @@ public enum DemoData {
         )
     }
 
+    /// Demo tags and lanes: two cards in the fast lane, some parked in Later.
+    public static func organization(now: Date = Date()) -> Organization {
+        var org = Organization()
+        let release = org.createTag(named: "release 4.2", color: .orange)!
+        let bug = org.createTag(named: "bug", color: .red)!
+        let research = org.createTag(named: "research", color: .purple)!
+        let side = org.createTag(named: "side project", color: .teal)!
+        func id(_ repo: ResolvedRepo, _ branch: String) -> String { "\(repo.id.key)#\(branch)" }
+
+        org.setLane(.fast, for: [id(orbit, "feat/offline-sync"), id(lumen, "codex/csv-rounding")], now: now)
+        org.setLane(.later, for: [id(orbit, "spike/fts"), id(lumen, "codex/decoder-bench"), "session:claude:c03"], now: now)
+        for (task, tags) in [
+            (id(orbit, "feat/offline-sync"), [release]),
+            (id(lumen, "codex/csv-rounding"), [bug, release]),
+            (id(lumen, "feat/theme-tokens"), [release]),
+            (id(orbit, "feat/dark-mode"), [release]),
+            (id(orbit, "spike/fts"), [research]),
+            (id(lumen, "codex/decoder-bench"), [research]),
+            ("session:claude:c03", [side]),
+            ("session:codex:x03", [bug]),
+        ] {
+            for tag in tags { org.setTag(tag.id, on: true, for: task, now: now) }
+        }
+        return org
+    }
+
     public static func board(now: Date = Date(), calendar: Calendar = .current, settings: BoardSettings = BoardSettings()) -> Board {
         let snap = snapshot(now: now, calendar: calendar)
         return BoardBuilder.build(sessions: snap.local.sessions, repos: snap.local.repos,
-                                  pullRequests: snap.github.pullRequests, settings: settings, now: now)
+                                  pullRequests: snap.github.pullRequests, settings: settings,
+                                  organization: organization(now: now), now: now)
     }
 }

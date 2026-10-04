@@ -39,6 +39,7 @@ struct MainWindow: View {
             ConfirmWriteSheet(pending: pending)
                 .environment(model)
         }
+        .modifier(NewTagAlert())
         .frame(minWidth: 980, minHeight: 600)
     }
 

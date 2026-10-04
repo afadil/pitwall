@@ -6,6 +6,8 @@ struct BoardView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var boardFocused: Bool
     @AppStorage("doneCollapsed") private var doneCollapsed = false
+    /// Row ids that are collapsed; Later starts collapsed.
+    @AppStorage("collapsedRows") private var collapsedRowsRaw = "lane:later"
 
     private let activeColumns: [BoardColumn] = [.working, .waiting, .inReview, .ready]
 
@@ -20,7 +22,7 @@ struct BoardView: View {
                 if !model.problems.isEmpty {
                     ProblemBanner(problems: model.problems)
                 }
-                columns(board)
+                lanes(board)
             }
             if model.inspectorOpen, let task = model.selectedTask {
                 Divider().overlay(Theme.hairline)
@@ -66,25 +68,55 @@ struct BoardView: View {
         return parts.joined(separator: " · ")
     }
 
-    private func columns(_ board: Board) -> some View {
+    private var collapsedRows: Set<String> {
+        Set(collapsedRowsRaw.split(separator: ",").map(String.init))
+    }
+
+    private func collapsedBinding(_ row: BoardRow) -> Binding<Bool> {
+        Binding(
+            get: { collapsedRows.contains(row.id) },
+            set: { collapse in
+                var set = collapsedRows
+                if collapse { set.insert(row.id) } else { set.remove(row.id) }
+                collapsedRowsRaw = set.sorted().joined(separator: ",")
+            }
+        )
+    }
+
+    /// Lanes cross the status columns: columns stay automatic, rows are yours.
+    private func lanes(_ board: Board) -> some View {
         GeometryReader { proxy in
             let spacing: CGFloat = 12
             // With details open, Done folds away so the active columns keep their room.
             let foldDone = doneCollapsed || model.inspectorOpen
             let doneWidth: CGFloat = foldDone ? 46 : 232
-            let available = proxy.size.width - 56 - doneWidth - spacing * 4
-            let columnWidth = max(model.inspectorOpen ? 206 : 244, min(360, available / 4))
-            ScrollView(.horizontal) {
+            let available = proxy.size.width - 56 - doneWidth - spacing * 4 - 20
+            let columnWidth = max(model.inspectorOpen ? 206 : 236, min(350, available / 4))
+            let rows = model.rows
+            let counts = Dictionary(uniqueKeysWithValues: activeColumns.map { ($0, board.count($0)) })
+            ScrollView([.horizontal, .vertical]) {
                 HStack(alignment: .top, spacing: spacing) {
-                    ForEach(activeColumns) { column in
-                        BoardColumnView(column: column, tasks: board.tasks(in: column))
-                            .frame(width: columnWidth)
+                    LazyVStack(alignment: .leading, spacing: 10, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            ForEach(rows) { row in
+                                LaneSection(row: row, columns: activeColumns, columnWidth: columnWidth, spacing: spacing,
+                                            collapsed: collapsedBinding(row))
+                            }
+                        } header: {
+                            ColumnHeaderRow(columns: activeColumns, counts: counts, width: columnWidth, spacing: spacing,
+                                            highlighted: model.highlightedColumn)
+                                .padding(.vertical, 6)
+                                // Blurs the cards scrolling underneath, like a native list header.
+                                .background(VisualEffectBackground(material: .headerView, blending: .withinWindow, state: .active))
+                        }
                     }
+                    .frame(width: columnWidth * 4 + spacing * 3 + 20)
                     DoneColumnView(tasks: board.tasks(in: .done), collapsed: Binding(
                         get: { foldDone },
                         set: { doneCollapsed = $0; if !$0 { model.inspectorOpen = false } }
                     ))
                     .frame(width: doneWidth)
+                    .padding(.top, 6)
                 }
                 .padding(.horizontal, 28)
                 .padding(.bottom, 20)
@@ -96,9 +128,12 @@ struct BoardView: View {
 
     // MARK: Keyboard navigation
 
+    /// Cards per column in on-screen order: row by row, skipping collapsed rows.
     private var navigableColumns: [[BoardTask]] {
-        let board = model.visibleBoard
-        return (activeColumns + (doneCollapsed ? [] : [.done])).map { board.tasks(in: $0) }
+        let rows = model.rows.filter { !collapsedRows.contains($0.id) }
+        var grid = activeColumns.map { column in rows.flatMap { $0.tasks(in: column) } }
+        if !(doneCollapsed || model.inspectorOpen) { grid.append(model.visibleBoard.tasks(in: .done)) }
+        return grid
     }
 
     private func position() -> (Int, Int)? {
@@ -136,6 +171,8 @@ private struct BoardToolbar: View {
     var body: some View {
         @Bindable var model = model
         HStack(spacing: 8) {
+            GroupingMenu()
+            TagFilterMenu()
             HStack(spacing: 6) {
                 Image(systemName: "line.3.horizontal.decrease")
                     .foregroundStyle(.secondary)
@@ -172,68 +209,6 @@ private struct BoardToolbar: View {
                 model.inspectorOpen.toggle()
             }
         }
-    }
-}
-
-/// One kanban column.
-struct BoardColumnView: View {
-    @Environment(AppModel.self) private var model
-    let column: BoardColumn
-    let tasks: [BoardTask]
-    @State private var showOlder = false
-
-    /// "Waiting on you" folds away tasks idle for more than two days.
-    private var split: (recent: [BoardTask], older: [BoardTask]) {
-        guard column == .waiting else { return (tasks, []) }
-        let cutoff = model.now.addingTimeInterval(-48 * 3600)
-        return (tasks.filter { $0.sortDate >= cutoff }, tasks.filter { $0.sortDate < cutoff })
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ColumnHeader(column: column, count: tasks.count, highlighted: model.highlightedColumn == column)
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 8) {
-                    let parts = split
-                    if tasks.isEmpty {
-                        EmptyColumn(message: column.emptyMessage)
-                    }
-                    ForEach(parts.recent) { task in
-                        TaskCard(task: task)
-                    }
-                    if !parts.older.isEmpty {
-                        Button {
-                            showOlder.toggle()
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption2.weight(.bold))
-                                    .rotationEffect(.degrees(showOlder ? 90 : 0))
-                                Text("Older than 2 days")
-                                Text("\(parts.older.count)").font(Theme.mono).foregroundStyle(.tertiary)
-                                Spacer()
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 4)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(showOlder ? "Hide \(parts.older.count) older tasks" : "Show \(parts.older.count) older tasks")
-                        if showOlder {
-                            ForEach(parts.older) { task in
-                                TaskCard(task: task)
-                            }
-                        }
-                    }
-                }
-                .padding(.bottom, 12)
-            }
-            .scrollIndicators(.never)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(column.title), \(tasks.count) task\(tasks.count == 1 ? "" : "s")")
     }
 }
 

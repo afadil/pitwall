@@ -52,6 +52,8 @@ enum SnapshotRunner {
         model.inspectorOpen = false
         model.selectedTaskID = nil
         model.screen = .board
+        if let grouping = model.mode.snapshotGrouping.flatMap(Grouping.init(rawValue:)) { model.settings.grouping = grouping }
+        if let name = model.mode.snapshotTagFilter, let tag = model.organization.tag(named: name) { model.tagFilter.toggle(tag: tag.id) }
         await shoot("board", window)
 
         let chosen = model.mode.snapshotSelect.flatMap { number in model.board.tasks.first { $0.pullRequest?.number == number } }

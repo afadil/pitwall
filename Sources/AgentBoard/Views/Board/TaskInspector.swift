@@ -10,6 +10,7 @@ struct TaskInspector: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 header
+                organizeSection
                 if let pr = task.pullRequest {
                     pullRequestSection(pr)
                 }
@@ -79,6 +80,53 @@ struct TaskInspector: View {
                     model.openInApp(session)
                 }
                 .padding(.top, 4)
+            }
+        }
+    }
+
+    /// Lane and tags: yours, stored in organization.json.
+    private var organizeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader("Lane")
+            SoftSegmentedControl(label: "Lane", options: Lane.allCases,
+                                 selection: Binding(get: { task.lane }, set: { model.setLane($0, for: task) })) { $0.title }
+            if task.stack != nil {
+                Text("Moves the whole stack.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            SectionHeader("Tags") {
+                Menu {
+                    let unused = model.organization.tags.filter { !model.hasTag($0, task) }
+                    ForEach(unused) { tag in
+                        Button {
+                            model.setTag(tag, on: true, for: task)
+                        } label: {
+                            Label { Text(tag.name) } icon: { Image(systemName: "circle.fill").foregroundStyle(tag.color.color) }
+                        }
+                    }
+                    if !unused.isEmpty { Divider() }
+                    Button("New tag…") { model.beginNewTag(for: task) }
+                } label: {
+                    Label("Add", systemImage: "plus").font(.caption.weight(.medium))
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .accessibilityLabel("Add tag")
+            }
+            if task.tags.isEmpty && task.labels.isEmpty {
+                Text("No tags. Add as many as you like, then filter the board by them.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                FlowLayout(spacing: 6) {
+                    ForEach(task.tags) { tag in
+                        TagChip(tag: tag) { model.setTag(tag, on: false, for: task) }
+                    }
+                    ForEach(task.labels, id: \.name) { LabelChip(label: $0) }
+                }
             }
         }
     }
@@ -346,5 +394,42 @@ struct ColumnPill: View {
         .padding(.vertical, 3)
         .background(Capsule().fill(column == .working || column == .waiting ? Theme.accent.opacity(0.13) : Color.primary.opacity(0.07)))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Wraps chips onto as many lines as needed.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, maxX: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {
+                x = 0
+                y += lineHeight + spacing
+                lineHeight = 0
+            }
+            x += size.width + spacing
+            maxX = max(maxX, x - spacing)
+            lineHeight = max(lineHeight, size.height)
+        }
+        return CGSize(width: min(maxX, width), height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, lineHeight: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += lineHeight + spacing
+                lineHeight = 0
+            }
+            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
     }
 }

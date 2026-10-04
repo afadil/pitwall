@@ -110,7 +110,8 @@ struct MenuBarPanel: View {
 
     @ViewBuilder
     private var list: some View {
-        let tasks = model.board.tasks(in: segment.column)
+        // Fast-lane cards come first.
+        let tasks = AppModel.fastFirst(model.board.tasks(in: segment.column))
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkle")
@@ -286,6 +287,12 @@ private struct PanelRow: View {
                     .font(Theme.monoSmall)
                     .foregroundStyle(.tertiary)
                     .frame(width: 58, alignment: .leading)
+                if task.lane == .fast {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Theme.accent)
+                        .accessibilityLabel("Fast lane")
+                }
                 Text(task.title)
                     .font(.callout)
                     .lineLimit(1)

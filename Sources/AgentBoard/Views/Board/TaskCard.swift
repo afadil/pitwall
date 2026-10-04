@@ -18,6 +18,9 @@ struct TaskCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
             LocationLine(task: task)
+            if !task.tags.isEmpty || !task.labels.isEmpty {
+                CardTagsRow(task: task)
+            }
             if let problem = task.problems.first {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
@@ -43,6 +46,14 @@ struct TaskCard: View {
             model.inspectorOpen = true
         })
         .help(task.sessionToOpen.map { "Double-click to open in \($0.app.displayName)" } ?? "")
+        // Drag between lanes; the column never changes.
+        .draggable(task.id) {
+            Text(task.title)
+                .font(.callout.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.regularMaterial))
+        }
         .contextMenu { TaskActionsMenu(task: task) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityDescription(task, now: model.now))
@@ -182,6 +193,9 @@ struct TaskCard: View {
             if pr.state == .open { parts.append(pr.checks.state.label) }
             if let review = pr.reviewDecision.label { parts.append(review) }
         }
+        if task.lane != .normal { parts.append(task.lane.title) }
+        if !task.tags.isEmpty { parts.append("tags " + task.tags.map(\.name).joined(separator: ", ")) }
+        if !task.labels.isEmpty { parts.append("labels " + task.labels.map(\.name).joined(separator: ", ")) }
         if task.isHidden { parts.append("hidden") }
         if let problem = task.problems.first { parts.append(problem) }
         return parts.joined(separator: ", ")
@@ -267,6 +281,8 @@ struct TaskActionsMenu: View {
         if task.branch != nil {
             Button("Copy branch name", systemImage: "doc.on.doc") { model.copyBranch(task) }
         }
+        Divider()
+        OrganizeMenu(task: task)
         if let pr = task.pullRequest, pr.state == .open {
             Divider()
             if pr.isDraft {
@@ -306,6 +322,9 @@ struct TaskAccessibilityActions: View {
             } else {
                 Button("Merge") { model.request(.merge(.squash), for: task) }
             }
+        }
+        ForEach(Lane.allCases.filter { $0 != task.lane }) { lane in
+            Button("Move to \(lane.title)") { model.setLane(lane, for: task) }
         }
         Button(task.isHidden ? "Show card" : "Hide card") { model.toggleHidden(task) }
     }

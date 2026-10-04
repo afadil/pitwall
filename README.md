@@ -80,6 +80,19 @@ Details that matter:
 - **Network.** The app reaches the network only through `gh`, using your existing
   login. No tokens are read or stored. No telemetry, analytics or update checks.
 
+## What it stores
+
+Agent Board keeps no copy of your sessions or PRs; it reads them on every refresh.
+It writes only two things, both in its own places:
+
+- Preferences in macOS user defaults (`~/Library/Preferences/local.agentboard.AgentBoard.plist`).
+- Your organization in `~/Library/Application Support/Agent Board/organization.json`:
+  tags, each card's lane, tags and hidden flag, keyed by task (repo and branch), so they
+  carry over to new sessions on the same branch. It's plain JSON, written atomically.
+  Malformed parts are skipped on load, an unreadable file is kept aside rather than
+  overwritten, and entries for cards gone for 30 days are cleaned up. Settings shows its
+  path and status.
+
 ## Board rules
 
 A **task** is one (repository, branch). Claude and Codex sessions on the same branch
@@ -114,6 +127,17 @@ because agents rebase and force-push the lower PRs as they go. When nobody is wo
 it, only the bottom PR can be Ready to merge, and the others are In review, marked
 "Stacked on #N". The details panel lists the whole stack.
 
+**Lanes and tags.** Columns are automatic; rows are yours. Every card sits in a lane:
+**Fast lane** (on top, tinted, with a limit of 3 by default that warns when exceeded),
+**Normal**, or **Later** (collapsed by default, for parking). Move cards by dragging
+them between lanes, from the context menu, the details panel or the Task menu (⌃1, ⌃2,
+⌃3). The column never changes, and moving one PR of a stack moves the whole stack.
+Cards can carry any number of your own tags (name and colour), and PRs' GitHub labels
+show up too. Filter the board by several tags or labels at once, matching any or all of
+them, and group the rows by lane, tag (a card sits under its first tag) or repository.
+The fast lane stays on top and Later at the bottom in every grouping. Fast-lane cards
+come first in the menu bar panel.
+
 PRs are matched by `headRefName == branch`. A cross-repo PR (from a fork) only matches
 when the fork belongs to the checkout's `origin` owner, so someone else's fork with
 the same branch name never matches. If the checkout has an `upstream` remote, PRs
@@ -136,7 +160,9 @@ VoiceOver actions:
 - Copy resume command (⇧⌘C): `cd <folder> && claude --resume <cliSessionId>` or
   `cd <folder> && codex resume <thread id>`. The `cd` is there because Claude looks up
   sessions per project folder. The Codex syntax was checked with `codex resume --help`.
-- Copy branch name (⌥⌘C), hide or show card (⌘⌫, stored locally)
+- Copy branch name (⌥⌘C), hide or show card (⌘⌫)
+- Move to Fast lane, Normal or Later (⌃1, ⌃2, ⌃3), or drag; add or remove tags, or
+  create one with "New tag…"
 - **Mark ready for review…** and **Merge…** (⇧⌘M) run `gh pr ready` / `gh pr merge`.
   Each opens a confirmation sheet that names the PR and shows the exact command.
   Merges offer only the methods the repo allows and pass `--match-head-commit`, so
@@ -200,7 +226,7 @@ Scripts/                   build-app.sh, make-icon.sh, snapshots.sh
 
 ## Testing
 
-`swift test` runs 111 tests. All fixtures are synthetic: hand-written JSON and JSONL
+`swift test` runs 129 tests. All fixtures are synthetic: hand-written JSON and JSONL
 modelled on the real formats, with a Codex database built at test time. The tests
 cover:
 
@@ -209,6 +235,8 @@ cover:
 - repo and branch resolution (remote URL forms, forks, worktrees, no remote)
 - column rules, task grouping, PR matching and gh JSON parsing
 - write actions: they reach only the fake `gh`, and only after confirmation
+- lanes, tags and organization.json: saving and loading, tolerant decoding, unreadable
+  files, pruning, grouping, filtering by many tags (any or all), stacks moving together
 - a full refresh leaves the fixture folders byte-for-byte unchanged, and the SQLite
   reader creates no `-wal`/`-shm` files
 - the file watcher

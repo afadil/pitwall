@@ -10,6 +10,8 @@ import Foundation
 ///     --render-icon <path>       write the app icon artwork and quit
 ///     --verbose                  log refreshes to stdout
 ///     --snapshot-select <PR>     show this PR's card in the details snapshot
+///     --snapshot-group <g>       group rows by lane, tag or repository
+///     --snapshot-tag <name>      filter by this tag
 struct LaunchOptions: Sendable {
     var demo = false
     var appearance: String?
@@ -18,6 +20,8 @@ struct LaunchOptions: Sendable {
     var renderIconDirectory: URL?
     var verbose = false
     var snapshotSelect: Int?
+    var snapshotGrouping: String?
+    var snapshotTagFilter: String?
 
     static let current = LaunchOptions(arguments: CommandLine.arguments)
 
@@ -28,6 +32,8 @@ struct LaunchOptions: Sendable {
             case "--demo": demo = true
             case "--verbose": verbose = true
             case "--snapshot-select": snapshotSelect = iterator.next().flatMap { Int($0) }
+            case "--snapshot-group": snapshotGrouping = iterator.next()
+            case "--snapshot-tag": snapshotTagFilter = iterator.next()
             case "--appearance": appearance = iterator.next()
             case "--snapshot-dir": snapshotDirectory = iterator.next().map { URL(filePath: $0, directoryHint: .isDirectory) }
             case "--snapshot-prefix": snapshotPrefix = iterator.next() ?? snapshotPrefix

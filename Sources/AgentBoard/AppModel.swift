@@ -35,6 +35,20 @@ final class AppModel {
     /// Board column to flash after jumping from Overview.
     var highlightedColumn: BoardColumn?
 
+    /// Lanes, tags and hidden cards, saved to organization.json.
+    var organization: Organization {
+        didSet {
+            guard organization != oldValue else { return }
+            persistOrganization()
+            rebuild()
+        }
+    }
+    private(set) var organizationProblem: String?
+    var tagFilter = TagFilter()
+    /// Card that "New tag…" will tag once named.
+    var newTagTarget: BoardTask?
+    var isNamingNewTag = false
+
     var settings: BoardSettings {
         didSet {
             guard settings != oldValue else { return }
@@ -68,6 +82,7 @@ final class AppModel {
     private var pendingLocal: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
     private var fetchedSlugs: Set<String> = []
+    private let organizationStore = OrganizationStore(url: OrganizationStore.standardURL)
     private static let settingsKey = "BoardSettings.v1"
 
     init(mode: LaunchOptions = .current) {
@@ -75,10 +90,31 @@ final class AppModel {
         self.paths = DataPaths.standard()
         let gh: GHRunning = mode.demo ? DemoGH() : GHCLI()
         self.engine = RefreshEngine(paths: paths, git: GitCLI(), gh: gh)
-        self.settings = mode.demo ? BoardSettings() : Self.loadSettings()
+        var settings = mode.demo ? BoardSettings() : Self.loadSettings()
+        var migratedHidden = false
+        if mode.demo {
+            self.organization = DemoData.organization()
+        } else {
+            let loaded = organizationStore.load()
+            var organization = loaded.organization
+            // First launch with organization.json: bring hidden cards over from settings.
+            if loaded.isNew, !settings.hiddenTaskIDs.isEmpty {
+                for id in settings.hiddenTaskIDs { organization.setHidden(true, for: id) }
+                settings.hiddenTaskIDs = []
+                migratedHidden = true
+            }
+            organization.prune()
+            self.organization = organization
+            self.organizationProblem = loaded.problem
+        }
+        self.settings = settings
         let afterWrite = Callback()
         self.writes = WriteActionCoordinator(runner: gh) { afterWrite.action() }
         afterWrite.action = { [weak self] in Task { await self?.refreshGitHub() } }
+        if migratedHidden {
+            persistOrganization()
+            persistSettings()
+        }
     }
 
     // MARK: - Lifecycle
@@ -181,10 +217,13 @@ final class AppModel {
         now = Date()
         let rebuilt = BoardBuilder.build(
             sessions: local.sessions, repos: local.repos, pullRequests: github.pullRequests,
-            settings: settings, now: now
+            settings: settings, organization: organization, now: now
         )
         // Only publish real changes, so views and the menu bar don't redraw for nothing.
         if rebuilt != board { board = rebuilt }
+        // Remember which organized cards are still around (at most once a day each).
+        var seen = organization
+        if seen.markSeen(rebuilt.tasks.map(\.id), now: now) { organization = seen }
         if let selectedTaskID, board.task(id: selectedTaskID) == nil {
             self.selectedTaskID = nil
         }
@@ -210,10 +249,14 @@ final class AppModel {
 
     var visibleBoard: Board {
         let query = filterText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return board }
+        guard !query.isEmpty || tagFilter.isActive else { return board }
         var filtered = board
         filtered.tasks = board.tasks.filter { task in
-            task.title.localizedCaseInsensitiveContains(query)
+            guard tagFilter.matches(task) else { return false }
+            guard !query.isEmpty else { return true }
+            return task.title.localizedCaseInsensitiveContains(query)
+                || task.tags.contains { $0.name.localizedCaseInsensitiveContains(query) }
+                || task.labels.contains { $0.name.localizedCaseInsensitiveContains(query) }
                 || task.locationLine.localizedCaseInsensitiveContains(query)
                 || task.pullRequest.map { "#\($0.number)".contains(query) || $0.title.localizedCaseInsensitiveContains(query) } ?? false
                 || task.sessions.contains { $0.title.localizedCaseInsensitiveContains(query) }
@@ -223,8 +266,18 @@ final class AppModel {
 
     var selectedTask: BoardTask? { board.task(id: selectedTaskID) }
 
+    /// Board rows for the current grouping, after filters.
+    var rows: [BoardRow] {
+        BoardLayout.rows(visibleBoard.tasks, grouping: settings.grouping, tags: organization.tags)
+    }
+
     /// "Waiting on you" tasks, newest first: what the menu bar counts.
-    var needsYou: [BoardTask] { board.tasks(in: .waiting) }
+    var needsYou: [BoardTask] { Self.fastFirst(board.tasks(in: .waiting)) }
+
+    /// Fast-lane cards first, keeping the newest-first order otherwise.
+    static func fastFirst(_ tasks: [BoardTask]) -> [BoardTask] {
+        tasks.filter { $0.lane == .fast } + tasks.filter { $0.lane != .fast }
+    }
 
     func timelineBlocks(calendar: Calendar = .current) -> [TimelineBlock] {
         guard let day = calendar.dateInterval(of: .day, for: now) else { return [] }
@@ -313,15 +366,68 @@ final class AppModel {
     }
 
     func toggleHidden(_ task: BoardTask) {
-        if settings.hiddenTaskIDs.contains(task.id) {
+        if task.isHidden {
+            organization.setHidden(false, for: task.id)
             settings.hiddenTaskIDs.remove(task.id)
             show(.info, "Card shown again")
         } else {
-            settings.hiddenTaskIDs.insert(task.id)
+            organization.setHidden(true, for: task.id)
             if selectedTaskID == task.id { selectedTaskID = nil }
             show(.info, "Card hidden. Turn on “Show hidden” to see it.")
         }
     }
+
+    // MARK: Lanes and tags
+
+    /// Moves a card, and the rest of its stack, to a lane.
+    func setLane(_ lane: Lane, for task: BoardTask) {
+        let ids = BoardLayout.stackPeers(of: task, in: board.tasks)
+        guard ids.contains(where: { (board.task(id: $0)?.lane ?? .normal) != lane }) else { return }
+        organization.setLane(lane, for: ids)
+        show(.info, ids.count > 1 ? "Moved the stack to \(lane.title)" : "Moved to \(lane.title)")
+    }
+
+    func setTag(_ tag: CardTag, on: Bool, for task: BoardTask) {
+        organization.setTag(tag.id, on: on, for: task.id)
+    }
+
+    func hasTag(_ tag: CardTag, _ task: BoardTask) -> Bool {
+        task.tags.contains { $0.id == tag.id }
+    }
+
+    /// Creates a tag (or finds one with that name) and adds it to `task` if given.
+    @discardableResult
+    func createTag(named name: String, color: TagColor? = nil, for task: BoardTask? = nil) -> CardTag? {
+        guard let tag = organization.createTag(named: name, color: color) else { return nil }
+        if let task { organization.setTag(tag.id, on: true, for: task.id) }
+        return tag
+    }
+
+    func beginNewTag(for task: BoardTask?) {
+        newTagTarget = task
+        isNamingNewTag = true
+    }
+
+    func deleteTag(_ tag: CardTag) {
+        organization.deleteTag(tag.id)
+        tagFilter.tagIDs.remove(tag.id)
+        show(.info, "Deleted tag “\(tag.name)”")
+    }
+
+    /// A drop onto a row moves the cards to the row's lane and, for tag rows, adds the tag.
+    func drop(_ taskIDs: [String], on row: BoardRow) {
+        for id in taskIDs {
+            guard let task = board.task(id: id) else { continue }
+            organization.setLane(row.dropLane, for: BoardLayout.stackPeers(of: task, in: board.tasks))
+            if let tagID = row.dropTag { organization.setTag(tagID, on: true, for: id) }
+        }
+    }
+
+    func cardsUsing(_ tag: CardTag) -> Int {
+        organization.cards.values.filter { $0.tagIDs.contains(tag.id) }.count
+    }
+
+    var organizationFilePath: String { organizationStore.url.path }
 
     func request(_ action: PRWriteAction, for task: BoardTask) {
         guard let pr = task.pullRequest else { return }
@@ -369,6 +475,15 @@ final class AppModel {
         guard let data = UserDefaults.standard.data(forKey: settingsKey),
               let settings = try? JSONDecoder().decode(BoardSettings.self, from: data) else { return BoardSettings() }
         return settings
+    }
+
+    private func persistOrganization() {
+        guard !mode.demo else { return }
+        do {
+            try organizationStore.save(organization)
+        } catch {
+            organizationProblem = "Can't save organization.json: \(error.localizedDescription)"
+        }
     }
 
     private func persistSettings() {
