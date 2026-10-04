@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// Menu bar commands, so everything is reachable from the keyboard.
@@ -67,10 +67,12 @@ struct AppCommands: Commands {
             }
             Menu("Tags") {
                 ForEach(model.organization.tags) { tag in
-                    Toggle(tag.name, isOn: Binding(
-                        get: { task.map { model.hasTag(tag, $0) } ?? false },
-                        set: { on in task.map { model.setTag(tag, on: on, for: $0) } }
-                    ))
+                    Toggle(
+                        tag.name,
+                        isOn: Binding(
+                            get: { task.map { model.hasTag(tag, $0) } ?? false },
+                            set: { on in task.map { model.setTag(tag, on: on, for: $0) } }
+                        ))
                 }
                 if !model.organization.tags.isEmpty { Divider() }
                 Button("New tag…") { model.beginNewTag(for: task) }

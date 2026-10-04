@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 enum Format {

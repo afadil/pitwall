@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 /// Write actions (mark ready, merge) must reach `gh` only through a confirmed
@@ -39,7 +40,7 @@ struct WriteActionTests {
         await coordinator.request(.merge(.squash), for: openPR)
         coordinator.cancel()
         #expect(coordinator.pending == nil)
-        await coordinator.confirm() // nothing pending: no-op
+        await coordinator.confirm()  // nothing pending: no-op
         #expect(gh.writeCalls.isEmpty)
     }
 
@@ -61,7 +62,7 @@ struct WriteActionTests {
         let gh = try fakeGH()
         let coordinator = WriteActionCoordinator(runner: gh)
         await coordinator.request(.markReady, for: draftPR)
-        #expect(gh.recorded.isEmpty) // mark ready needs no lookup at all
+        #expect(gh.recorded.isEmpty)  // mark ready needs no lookup at all
         await coordinator.confirm()
         #expect(gh.writeCalls == [["pr", "ready", "39", "--repo", "acme/orbit"]])
     }
@@ -112,7 +113,10 @@ struct WriteActionTests {
 
     @Test func ghFailureIsReportedAndClearsTheSheet() async throws {
         let gh = try fakeGH()
-        gh.respond(to: ["pr", "merge"], with: ProcessResult(exitCode: 1, stderr: Data("Pull request is not mergeable: the base branch policy prohibits the merge.".utf8)))
+        gh.respond(
+            to: ["pr", "merge"],
+            with: ProcessResult(
+                exitCode: 1, stderr: Data("Pull request is not mergeable: the base branch policy prohibits the merge.".utf8)))
         let coordinator = WriteActionCoordinator(runner: gh)
         await coordinator.request(.merge(.squash), for: openPR)
         await coordinator.confirm()

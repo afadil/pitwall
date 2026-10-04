@@ -73,7 +73,9 @@ struct MenuBarPanel: View {
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(model.isRefreshing && !reduceMotion ? 180 : 0))
                     .opacity(model.isRefreshing && reduceMotion ? 0.4 : 1)
-                    .animation(model.isRefreshing && !reduceMotion ? .linear(duration: 0.6).repeatForever(autoreverses: false) : .default, value: model.isRefreshing)
+                    .animation(
+                        model.isRefreshing && !reduceMotion ? .linear(duration: 0.6).repeatForever(autoreverses: false) : .default,
+                        value: model.isRefreshing)
             }
             .buttonStyle(.plain)
             .help("Refresh")

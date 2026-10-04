@@ -43,10 +43,13 @@ struct ConfirmWriteSheet: View {
             .surface(radius: 10)
 
             if isMerge, pending.allowedMethods.count > 1 {
-                Picker("Merge method", selection: Binding(
-                    get: { if case let .merge(method) = pending.action { method } else { .squash } },
-                    set: { model.writes.choose($0) }
-                )) {
+                Picker(
+                    "Merge method",
+                    selection: Binding(
+                        get: { if case .merge(let method) = pending.action { method } else { .squash } },
+                        set: { model.writes.choose($0) }
+                    )
+                ) {
                     ForEach(pending.allowedMethods) { method in
                         Text(method.title).tag(method)
                     }

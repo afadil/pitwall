@@ -98,8 +98,9 @@ public actor RepoResolver {
         // worktrees of the same repo group together.
         let commonDir = await git.run(["rev-parse", "--path-format=absolute", "--git-common-dir"], in: directory)
         guard commonDir?.exitCode == 0,
-              let path = commonDir?.stdoutString.trimmingCharacters(in: .whitespacesAndNewlines),
-              !path.isEmpty else { return nil }
+            let path = commonDir?.stdoutString.trimmingCharacters(in: .whitespacesAndNewlines),
+            !path.isEmpty
+        else { return nil }
         let root = path.hasSuffix("/.git") ? String(path.dropLast(5)) : path
         // Without a remote there's no recorded default branch; main/master is assumed.
         return ResolvedRepo(id: .local(path: root))

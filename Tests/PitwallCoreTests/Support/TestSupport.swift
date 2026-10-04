@@ -1,5 +1,6 @@
 import Foundation
 import SQLite3
+
 @testable import PitwallCore
 
 /// Fixed clock for tests: 2026-10-04 15:20 UTC.
@@ -53,8 +54,9 @@ final class FixtureHome {
 
     func installCodex(threads: [CodexThreadRow]? = nil, version: Int = 5) throws {
         try copy("codex", to: "codex")
-        try CodexDatabase.create(at: paths.codexHome.appending(path: "state_\(version).sqlite"),
-                                 rows: threads ?? CodexThreadRow.standard(sessions: paths.codexSessions))
+        try CodexDatabase.create(
+            at: paths.codexHome.appending(path: "state_\(version).sqlite"),
+            rows: threads ?? CodexThreadRow.standard(sessions: paths.codexSessions))
     }
 
     func copy(_ fixture: String, to destination: String) throws {
@@ -156,18 +158,18 @@ struct CodexThreadRow {
 /// Builds a fixture Codex database with the real `threads` column layout.
 enum CodexDatabase {
     static let schema = """
-    CREATE TABLE threads (
-        id TEXT PRIMARY KEY, rollout_path TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
-        source TEXT NOT NULL, model_provider TEXT NOT NULL, cwd TEXT NOT NULL, title TEXT NOT NULL,
-        sandbox_policy TEXT NOT NULL, approval_mode TEXT NOT NULL, tokens_used INTEGER NOT NULL DEFAULT 0,
-        has_user_event INTEGER NOT NULL DEFAULT 0, archived INTEGER NOT NULL DEFAULT 0, archived_at INTEGER,
-        git_sha TEXT, git_branch TEXT, git_origin_url TEXT, cli_version TEXT NOT NULL DEFAULT '',
-        first_user_message TEXT NOT NULL DEFAULT '', agent_nickname TEXT, agent_role TEXT, memory_mode TEXT,
-        model TEXT, reasoning_effort TEXT, agent_path TEXT, created_at_ms INTEGER, updated_at_ms INTEGER,
-        thread_source TEXT, preview TEXT NOT NULL DEFAULT '', recency_at INTEGER, recency_at_ms INTEGER,
-        history_mode TEXT, name TEXT, is_pinned INTEGER NOT NULL DEFAULT 0, originator TEXT
-    );
-    """
+        CREATE TABLE threads (
+            id TEXT PRIMARY KEY, rollout_path TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+            source TEXT NOT NULL, model_provider TEXT NOT NULL, cwd TEXT NOT NULL, title TEXT NOT NULL,
+            sandbox_policy TEXT NOT NULL, approval_mode TEXT NOT NULL, tokens_used INTEGER NOT NULL DEFAULT 0,
+            has_user_event INTEGER NOT NULL DEFAULT 0, archived INTEGER NOT NULL DEFAULT 0, archived_at INTEGER,
+            git_sha TEXT, git_branch TEXT, git_origin_url TEXT, cli_version TEXT NOT NULL DEFAULT '',
+            first_user_message TEXT NOT NULL DEFAULT '', agent_nickname TEXT, agent_role TEXT, memory_mode TEXT,
+            model TEXT, reasoning_effort TEXT, agent_path TEXT, created_at_ms INTEGER, updated_at_ms INTEGER,
+            thread_source TEXT, preview TEXT NOT NULL DEFAULT '', recency_at INTEGER, recency_at_ms INTEGER,
+            history_mode TEXT, name TEXT, is_pinned INTEGER NOT NULL DEFAULT 0, originator TEXT
+        );
+        """
 
     static func create(at url: URL, rows: [CodexThreadRow], schema: String = schema, keepWAL: Bool = false) throws {
         var db: OpaquePointer?
@@ -185,15 +187,16 @@ enum CodexDatabase {
         try exec(schema)
         for row in rows {
             func q(_ s: String?) -> String { s.map { "'" + $0.replacingOccurrences(of: "'", with: "''") + "'" } ?? "NULL" }
-            try exec("""
-            INSERT INTO threads (id, rollout_path, created_at, updated_at, source, model_provider, cwd, title,
-              sandbox_policy, approval_mode, archived, git_branch, git_origin_url, first_user_message,
-              created_at_ms, updated_at_ms, thread_source, name, originator)
-            VALUES (\(q(row.id)), \(q(row.rolloutPath)), \(row.createdAtMs / 1000), \(row.updatedAtMs / 1000),
-              \(q(row.source)), 'openai', \(q(row.cwd)), \(q(row.title ?? "")), '{}', 'never', \(row.archived),
-              \(q(row.gitBranch)), \(q(row.gitOriginURL)), \(q(row.firstUserMessage ?? "")),
-              \(row.createdAtMs), \(row.updatedAtMs), \(q(row.threadSource)), \(q(row.name)), 'Codex Desktop');
-            """)
+            try exec(
+                """
+                INSERT INTO threads (id, rollout_path, created_at, updated_at, source, model_provider, cwd, title,
+                  sandbox_policy, approval_mode, archived, git_branch, git_origin_url, first_user_message,
+                  created_at_ms, updated_at_ms, thread_source, name, originator)
+                VALUES (\(q(row.id)), \(q(row.rolloutPath)), \(row.createdAtMs / 1000), \(row.updatedAtMs / 1000),
+                  \(q(row.source)), 'openai', \(q(row.cwd)), \(q(row.title ?? "")), '{}', 'never', \(row.archived),
+                  \(q(row.gitBranch)), \(q(row.gitOriginURL)), \(q(row.firstUserMessage ?? "")),
+                  \(row.createdAtMs), \(row.updatedAtMs), \(q(row.threadSource)), \(q(row.name)), 'Codex Desktop');
+                """)
         }
         if keepWAL {
             // Leave the connection open so the WAL file stays on disk, like a running app.
@@ -226,7 +229,8 @@ final class FakeGit: GitRunning, @unchecked Sendable {
     }
 
     var callCount: Int {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return calls.count
     }
 
@@ -261,7 +265,8 @@ final class FakeGH: GHRunning, @unchecked Sendable {
 
     /// Responds to calls whose arguments start with `prefix`.
     func respond(to prefix: [String], with result: ProcessResult) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         responses[prefix.joined(separator: " ")] = result
     }
 
@@ -270,7 +275,8 @@ final class FakeGH: GHRunning, @unchecked Sendable {
     }
 
     var recorded: [[String]] {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        defer { lock.unlock() }
         return calls
     }
 

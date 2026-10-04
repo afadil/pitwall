@@ -1,5 +1,5 @@
-import PitwallCore
 import Foundation
+import PitwallCore
 
 // Read-only check against the real data on this Mac. Prints what Pitwall
 // sees so it can be compared with the Claude and Codex apps and with GitHub.
@@ -18,7 +18,8 @@ let local = await engine.readLocal(now: now)
 let settings = BoardSettings()
 let slugs = local.githubSlugs(settings: settings)
 let github = skipGitHub ? GitHubSnapshot(fetchedAt: nil) : await engine.fetchGitHub(slugs: slugs, now: now)
-let board = BoardBuilder.build(sessions: local.sessions, repos: local.repos, pullRequests: github.pullRequests, settings: settings, now: now)
+let board = BoardBuilder.build(
+    sessions: local.sessions, repos: local.repos, pullRequests: github.pullRequests, settings: settings, now: now)
 
 let iso = ISO8601DateFormatter()
 
@@ -34,17 +35,23 @@ if wantsJSON {
     func taskJSON(_ t: BoardTask) -> [String: Any] {
         var pr: Any = NSNull()
         if let p = t.pullRequest {
-            pr = ["repo": p.repo, "number": p.number, "state": p.state.rawValue, "isDraft": p.isDraft,
-                  "review": p.reviewDecision.rawValue, "ci": p.checks.state.rawValue, "headRefName": p.headRefName]
+            pr = [
+                "repo": p.repo, "number": p.number, "state": p.state.rawValue, "isDraft": p.isDraft,
+                "review": p.reviewDecision.rawValue, "ci": p.checks.state.rawValue, "headRefName": p.headRefName,
+            ]
         }
-        return ["id": t.id, "title": t.title, "column": t.column.rawValue, "reason": t.reviewReason?.rawValue ?? NSNull(),
-                "sessions": t.sessions.map(\.id), "pr": pr]
+        return [
+            "id": t.id, "title": t.title, "column": t.column.rawValue, "reason": t.reviewReason?.rawValue ?? NSNull(),
+            "sessions": t.sessions.map(\.id), "pr": pr,
+        ]
     }
     let object: [String: Any] = [
         "generatedAt": iso.string(from: now),
         "sessions": local.sessions.map(sessionJSON),
         "tasks": board.tasks.map(taskJSON),
-        "statuses": (local.statuses + [github.status(repoCount: slugs.count)]).map { ["kind": $0.kind.rawValue, "health": "\($0.health)", "detail": $0.detail] },
+        "statuses": (local.statuses + [github.status(repoCount: slugs.count)]).map {
+            ["kind": $0.kind.rawValue, "health": "\($0.health)", "detail": $0.detail]
+        },
         "githubErrors": github.errors.mapValues(\.description),
     ]
     let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
@@ -73,7 +80,9 @@ for app in AgentApp.allCases {
     print("\n\(app.displayName): \(active.count) active, \(all.count - active.count) archived")
     for s in active {
         let repo = local.repos[s.id]?.id.displayName ?? "no repo"
-        print("  \(s.turn.rawValue.padding(toLength: 8, withPad: " ", startingAt: 0)) \(relative(s.lastActivity).padding(toLength: 5, withPad: " ", startingAt: 0)) \(s.title.prefix(60)) · \(repo) · \(s.branch ?? "no branch")\(s.problem.map { " ⚠︎ \($0)" } ?? "")")
+        print(
+            "  \(s.turn.rawValue.padding(toLength: 8, withPad: " ", startingAt: 0)) \(relative(s.lastActivity).padding(toLength: 5, withPad: " ", startingAt: 0)) \(s.title.prefix(60)) · \(repo) · \(s.branch ?? "no branch")\(s.problem.map { " ⚠︎ \($0)" } ?? "")"
+        )
     }
 }
 

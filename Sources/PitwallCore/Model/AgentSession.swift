@@ -128,10 +128,11 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
     /// into the session's folder first.
     public var resumeCommand: String? {
         guard !resumeID.isEmpty else { return nil }
-        let base = switch app {
-        case .claude: "claude --resume \(resumeID)"
-        case .codex: "codex resume \(resumeID)"
-        }
+        let base =
+            switch app {
+            case .claude: "claude --resume \(resumeID)"
+            case .codex: "codex resume \(resumeID)"
+            }
         guard let cwd, !cwd.isEmpty else { return base }
         return "cd \(Shell.quote(cwd)) && \(base)"
     }

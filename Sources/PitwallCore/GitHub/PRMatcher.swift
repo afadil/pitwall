@@ -17,7 +17,8 @@ public enum PRMatcher {
             }
             return pr.repo.lowercased() == originSlug
         }
-        if let open = candidates.filter({ $0.state == .open }).max(by: { ($0.updatedAt ?? .distantPast) < ($1.updatedAt ?? .distantPast) }) {
+        if let open = candidates.filter({ $0.state == .open }).max(by: { ($0.updatedAt ?? .distantPast) < ($1.updatedAt ?? .distantPast) })
+        {
             return open
         }
         return candidates.max { ($0.finishedAt ?? .distantPast) < ($1.finishedAt ?? .distantPast) }

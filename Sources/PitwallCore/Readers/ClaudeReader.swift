@@ -31,19 +31,27 @@ public final class ClaudeReader {
         let fm = FileManager.default
         var isDirectory: ObjCBool = false
         guard fm.fileExists(atPath: sessionsRoot.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            return SourceRead(items: [], statuses: [
-                SourceStatus(kind: .claudeSessions, path: sessionsRoot.path, health: .missing, detail: "Not found. Is the Claude desktop app installed?"),
-                SourceStatus(kind: .claudeTranscripts, path: projectsRoot.path, health: .missing, detail: "No sessions to look up"),
-            ])
+            return SourceRead(
+                items: [],
+                statuses: [
+                    SourceStatus(
+                        kind: .claudeSessions, path: sessionsRoot.path, health: .missing,
+                        detail: "Not found. Is the Claude desktop app installed?"),
+                    SourceStatus(kind: .claudeTranscripts, path: projectsRoot.path, health: .missing, detail: "No sessions to look up"),
+                ])
         }
 
         let files: [URL]
         do {
             files = try sessionFiles()
         } catch {
-            return SourceRead(items: [], statuses: [
-                SourceStatus(kind: .claudeSessions, path: sessionsRoot.path, health: .error, detail: "Can't read folder: \(error.localizedDescription)"),
-            ])
+            return SourceRead(
+                items: [],
+                statuses: [
+                    SourceStatus(
+                        kind: .claudeSessions, path: sessionsRoot.path, health: .error,
+                        detail: "Can't read folder: \(error.localizedDescription)")
+                ])
         }
 
         let startOfDay = calendar.startOfDay(for: now)
@@ -93,7 +101,8 @@ public final class ClaudeReader {
                 continue
             }
 
-            let activeToday = (metadata.lastActivityAt ?? .distantPast) >= startOfDay
+            let activeToday =
+                (metadata.lastActivityAt ?? .distantPast) >= startOfDay
                 || (FileStamp(transcriptURL)?.modified ?? .distantPast) >= startOfDay
             do {
                 let summary = try transcriptSummary(at: transcriptURL, activitySince: activeToday ? startOfDay : nil)
@@ -132,11 +141,17 @@ public final class ClaudeReader {
 
         let transcriptsStatus: SourceStatus
         if !fm.fileExists(atPath: projectsRoot.path) {
-            transcriptsStatus = SourceStatus(kind: .claudeTranscripts, path: projectsRoot.path, health: sessions.isEmpty ? .missing : .error, detail: "Not found. Branches and turn state are unavailable.")
+            transcriptsStatus = SourceStatus(
+                kind: .claudeTranscripts, path: projectsRoot.path, health: sessions.isEmpty ? .missing : .error,
+                detail: "Not found. Branches and turn state are unavailable.")
         } else if transcriptProblems > 0 {
-            transcriptsStatus = SourceStatus(kind: .claudeTranscripts, path: projectsRoot.path, health: .warning, detail: "Can't read \(transcriptProblems) of \(sessions.count) transcripts")
+            transcriptsStatus = SourceStatus(
+                kind: .claudeTranscripts, path: projectsRoot.path, health: .warning,
+                detail: "Can't read \(transcriptProblems) of \(sessions.count) transcripts")
         } else {
-            transcriptsStatus = SourceStatus(kind: .claudeTranscripts, path: projectsRoot.path, health: .ok, detail: "\(transcriptsRead) transcript\(transcriptsRead == 1 ? "" : "s") · tails only")
+            transcriptsStatus = SourceStatus(
+                kind: .claudeTranscripts, path: projectsRoot.path, health: .ok,
+                detail: "\(transcriptsRead) transcript\(transcriptsRead == 1 ? "" : "s") · tails only")
         }
 
         return SourceRead(items: sessions, statuses: [sessionsStatus, transcriptsStatus])
@@ -220,7 +235,9 @@ public final class ClaudeReader {
     private func lastWrite(transcript: URL) -> Date? {
         var dates = [FileStamp(transcript)?.modified].compactMap { $0 }
         let sidecar = transcript.deletingPathExtension().appending(path: "subagents", directoryHint: .isDirectory)
-        if let entries = try? FileManager.default.contentsOfDirectory(at: sidecar, includingPropertiesForKeys: [.contentModificationDateKey]) {
+        if let entries = try? FileManager.default.contentsOfDirectory(
+            at: sidecar, includingPropertiesForKeys: [.contentModificationDateKey])
+        {
             for entry in entries where entry.pathExtension == "jsonl" {
                 if let date = try? entry.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate {
                     dates.append(date)

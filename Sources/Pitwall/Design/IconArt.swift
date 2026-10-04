@@ -8,11 +8,16 @@ struct IconArt: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 185, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.24, green: 0.21, blue: 0.19), Color(red: 0.085, green: 0.075, blue: 0.07)],
-                                     startPoint: .top, endPoint: .bottom))
+                .fill(
+                    LinearGradient(
+                        colors: [Color(red: 0.24, green: 0.21, blue: 0.19), Color(red: 0.085, green: 0.075, blue: 0.07)],
+                        startPoint: .top, endPoint: .bottom)
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 185, style: .continuous)
-                        .strokeBorder(LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.02)], startPoint: .top, endPoint: .bottom), lineWidth: 3)
+                        .strokeBorder(
+                            LinearGradient(colors: [.white.opacity(0.22), .white.opacity(0.02)], startPoint: .top, endPoint: .bottom),
+                            lineWidth: 3)
                 )
                 .frame(width: 824, height: 824)
                 .shadow(color: .black.opacity(0.35), radius: 18, y: 10)
@@ -41,7 +46,9 @@ struct IconArt: View {
     private enum PadKind { case orange, white, dim }
 
     private var orange: LinearGradient {
-        LinearGradient(colors: [Color(red: 1.0, green: 0.56, blue: 0.30), Color(red: 0.93, green: 0.38, blue: 0.12)], startPoint: .top, endPoint: .bottom)
+        LinearGradient(
+            colors: [Color(red: 1.0, green: 0.56, blue: 0.30), Color(red: 0.93, green: 0.38, blue: 0.12)], startPoint: .top,
+            endPoint: .bottom)
     }
 
     private func column(_ pads: [PadKind]) -> some View {
@@ -81,7 +88,8 @@ struct IconArt: View {
         let renderer = ImageRenderer(content: IconArt())
         renderer.scale = 1
         guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
-              let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:]) else {
+            let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:])
+        else {
             throw CocoaError(.fileWriteUnknown)
         }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

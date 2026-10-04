@@ -41,7 +41,8 @@ public final class ReadOnlySQLite {
         components.scheme = "file"
         components.path = openPath
         // The private copy must be writable so SQLite can replay its WAL into it.
-        components.queryItems = immutable
+        components.queryItems =
+            immutable
             ? [URLQueryItem(name: "mode", value: "ro"), URLQueryItem(name: "immutable", value: "1")]
             : [URLQueryItem(name: "mode", value: "rw")]
         guard let uri = components.string else {

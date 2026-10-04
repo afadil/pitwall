@@ -93,7 +93,8 @@ public enum ProcessRunner {
     /// the shell's PATH, so Homebrew locations are checked explicitly.
     public static func locate(_ name: String, extraDirectories: [String] = []) -> URL? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        var directories = extraDirectories + ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin", "\(home)/bin", "/usr/bin", "/bin"]
+        var directories =
+            extraDirectories + ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin", "\(home)/bin", "/usr/bin", "/bin"]
         if let path = ProcessInfo.processInfo.environment["PATH"] {
             directories += path.split(separator: ":").map(String.init)
         }

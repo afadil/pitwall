@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Tail reader and timestamps")
@@ -60,16 +61,20 @@ struct TailReaderTests {
         let spans = Timeline.cluster(stamps, gap: 300, minimumLength: 120)
         #expect(spans.count == 3)
         #expect(spans[0].start == base && spans[0].duration == 240)
-        #expect(spans[1].duration == 120) // 60 s padded to the minimum
+        #expect(spans[1].duration == 120)  // 60 s padded to the minimum
         #expect(spans[2].start == base.addingTimeInterval(4000))
     }
 
     @Test func mergesParallelSessionsPerApp() {
         let base = date("2026-10-04T10:00:00Z")
         func block(_ app: AgentApp, _ start: TimeInterval, _ end: TimeInterval, _ id: String) -> TimelineBlock {
-            TimelineBlock(app: app, taskID: nil, sessionID: id, interval: DateInterval(start: base.addingTimeInterval(start), end: base.addingTimeInterval(end)))
+            TimelineBlock(
+                app: app, taskID: nil, sessionID: id,
+                interval: DateInterval(start: base.addingTimeInterval(start), end: base.addingTimeInterval(end)))
         }
-        let blocks = [block(.claude, 0, 600, "a"), block(.claude, 300, 900, "b"), block(.claude, 960, 1200, "c"), block(.codex, 0, 60, "d")]
+        let blocks = [
+            block(.claude, 0, 600, "a"), block(.claude, 300, 900, "b"), block(.claude, 960, 1200, "c"), block(.codex, 0, 60, "d"),
+        ]
         #expect(Timeline.merged(blocks, app: .claude).count == 2)
         #expect(Timeline.merged(blocks, app: .claude, joiningGap: 120).count == 1)
         #expect(Timeline.activeDuration(blocks, app: .claude) == 900 + 240)

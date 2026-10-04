@@ -39,7 +39,8 @@ public enum BoardBuilder {
             for link in session.linkedPullRequests {
                 allRepos.insert(link.repo)
                 guard !settings.excludedRepos.contains(link.repo.key) else { continue }
-                let repo = resolved.flatMap { $0.id == link.repo || $0.upstream == link.repo ? $0 : nil }
+                let repo =
+                    resolved.flatMap { $0.id == link.repo || $0.upstream == link.repo ? $0 : nil }
                     ?? ResolvedRepo(id: link.repo, defaultBranch: knownDefaultBranch(link.repo, in: repos))
                 guard !repo.isDefaultBranch(link.branch) else { continue }
                 let key = "\(repo.id.key)#\(link.branch)"
@@ -60,7 +61,8 @@ public enum BoardBuilder {
             var pr: PullRequest?
             if let repo = group.repo, let branch = group.branch, !group.isDefault {
                 let candidates = repo.pullRequestSources.flatMap { pullRequests[$0] ?? [] }
-                pr = PRMatcher.match(branch: branch, repo: repo, in: candidates)
+                pr =
+                    PRMatcher.match(branch: branch, repo: repo, in: candidates)
                     ?? candidates.first { group.linkedNumbers.contains($0.number) && $0.headRefName == branch }
             }
             // A PR link is only worth a card when the PR itself is known.
@@ -69,18 +71,19 @@ public enum BoardBuilder {
             guard let placement = BoardRules.placement(sessions: onBranch, pullRequest: pr, now: now) else { continue }
             let hidden = organization.isHidden(id)
             if hidden, !settings.showHidden { continue }
-            tasks.append(BoardTask(
-                id: id,
-                repo: group.repo?.id,
-                branch: group.branch,
-                isDefaultBranch: group.isDefault,
-                sessions: onBranch + linked,
-                linkedSessionIDs: Set(linked.map(\.id)),
-                pullRequest: pr,
-                column: placement.column,
-                reviewReason: placement.reason,
-                isHidden: hidden
-            ))
+            tasks.append(
+                BoardTask(
+                    id: id,
+                    repo: group.repo?.id,
+                    branch: group.branch,
+                    isDefaultBranch: group.isDefault,
+                    sessions: onBranch + linked,
+                    linkedSessionIDs: Set(linked.map(\.id)),
+                    pullRequest: pr,
+                    column: placement.column,
+                    reviewReason: placement.reason,
+                    isHidden: hidden
+                ))
         }
 
         applyStacks(to: &tasks, pullRequests: pullRequests)
@@ -100,57 +103,21 @@ public enum BoardBuilder {
     /// - otherwise a PR whose base is another open PR's branch can't land first, so
     ///   it's In review ("Stacked") rather than Ready to merge.
     static func applyStacks(to tasks: inout [BoardTask], pullRequests: [String: [PullRequest]]) {
-        // Open same-repo PRs by repo and head branch, from everything gh returned.
-        var openByHead: [String: [String: PullRequest]] = [:]
-        for (slug, prs) in pullRequests {
-            for pr in prs where pr.state == .open && !pr.isCrossRepository {
-                openByHead[slug.lowercased(), default: [:]][pr.headRefName] = pr
-            }
-        }
-        func base(of pr: PullRequest) -> PullRequest? {
-            guard let baseRef = pr.baseRefName, baseRef != pr.headRefName else { return nil }
-            return openByHead[pr.repo.lowercased()]?[baseRef]
-        }
-        func key(_ pr: PullRequest) -> String { "\(pr.repo.lowercased())#\(pr.number)" }
+        let stacks = PRStacks(pullRequests: pullRequests)
 
-        // Walk each open PR down to the bottom of its stack, then collect members.
-        var bottomOf: [String: String] = [:]
-        var prByKey: [String: PullRequest] = [:]
-        for prs in openByHead.values {
-            for pr in prs.values {
-                prByKey[key(pr)] = pr
-                var current = pr
-                var seen: Set<Int> = [pr.number]
-                while let next = base(of: current), seen.insert(next.number).inserted { current = next }
-                bottomOf[key(pr)] = key(current)
-            }
-        }
-        var stacks: [String: [PullRequest]] = [:]
-        for (member, bottom) in bottomOf { stacks[bottom, default: []].append(prByKey[member]!) }
-        func ordered(_ members: [PullRequest]) -> [Int] {
-            // Bottom first: sort by distance from the bottom of the stack.
-            func depth(_ pr: PullRequest) -> Int {
-                var d = 0, current = pr
-                var seen: Set<Int> = [pr.number]
-                while let next = base(of: current), seen.insert(next.number).inserted { d += 1; current = next }
-                return d
-            }
-            return members.sorted { (depth($0), $0.number) < (depth($1), $1.number) }.map(\.number)
-        }
-
-        // Which stacks have a card that is Working on its own account?
+        // Stacks with a card that is Working on its own account, and which PR that is.
         var workingVia: [String: Int] = [:]
         for task in tasks where task.column == .working {
-            if let pr = task.pullRequest, pr.state == .open, let bottom = bottomOf[key(pr)] {
-                workingVia[bottom] = workingVia[bottom] ?? pr.number
-            }
+            guard let pr = task.pullRequest, let stack = stacks.stack(containing: pr) else { continue }
+            workingVia[stack.id] = workingVia[stack.id] ?? pr.number
         }
 
         for index in tasks.indices {
-            guard let pr = tasks[index].pullRequest, pr.state == .open,
-                  let bottom = bottomOf[key(pr)], let members = stacks[bottom], members.count > 1 else { continue }
-            var info = StackInfo(members: ordered(members), base: base(of: pr)?.number)
-            if tasks[index].column != .working, let via = workingVia[bottom], via != pr.number {
+            guard let pr = tasks[index].pullRequest, let stack = stacks.stack(containing: pr),
+                stack.members.count > 1
+            else { continue }
+            var info = StackInfo(members: stack.members, base: stacks.base(of: pr)?.number)
+            if tasks[index].column != .working, let via = workingVia[stack.id], via != pr.number {
                 tasks[index].column = .working
                 tasks[index].reviewReason = nil
                 info.workingVia = via
@@ -177,7 +144,8 @@ public enum BoardBuilder {
         for index in tasks.indices {
             let id = tasks[index].id
             tasks[index].tags = organization.tags(for: id)
-            tasks[index].lane = organization.lane(for: id)
+            tasks[index].lane =
+                organization.lane(for: id)
                 ?? stackKey(tasks[index]).flatMap { stackLane[$0] }
                 ?? .normal
         }
@@ -187,7 +155,8 @@ public enum BoardBuilder {
     /// branch, or outside any repo get their own card.
     public static func taskID(for session: AgentSession, repo: ResolvedRepo?) -> String {
         guard let branch = session.branch, !branch.isEmpty,
-              let repo, !repo.isDefaultBranch(branch) else {
+            let repo, !repo.isDefaultBranch(branch)
+        else {
             return "session:\(session.id)"
         }
         return "\(repo.id.key)#\(branch)"

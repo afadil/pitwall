@@ -39,12 +39,15 @@ public final class CodexReader {
         let sessionsDir = codexHome.appending(path: "sessions", directoryHint: .isDirectory)
         guard let database = stateDatabase() else {
             let missing = !FileManager.default.fileExists(atPath: codexHome.path)
-            return SourceRead(items: [], statuses: [
-                SourceStatus(kind: .codexThreads, path: codexHome.appending(path: "state_*.sqlite").path,
-                             health: .missing,
-                             detail: missing ? "Not found. Is the Codex desktop app installed?" : "No state_*.sqlite database found"),
-                SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .missing, detail: "No threads to look up"),
-            ])
+            return SourceRead(
+                items: [],
+                statuses: [
+                    SourceStatus(
+                        kind: .codexThreads, path: codexHome.appending(path: "state_*.sqlite").path,
+                        health: .missing,
+                        detail: missing ? "Not found. Is the Codex desktop app installed?" : "No state_*.sqlite database found"),
+                    SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .missing, detail: "No threads to look up"),
+                ])
         }
 
         let rows: [[String: Any]]
@@ -64,10 +67,14 @@ public final class CodexReader {
                 .joined(separator: ", ")
             rows = try db.query("SELECT \(selected) FROM threads")
         } catch {
-            return SourceRead(items: [], statuses: [
-                SourceStatus(kind: .codexThreads, path: database.path, health: .error, detail: "Can't read \(database.lastPathComponent): \(error)"),
-                SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .missing, detail: "No threads to look up"),
-            ])
+            return SourceRead(
+                items: [],
+                statuses: [
+                    SourceStatus(
+                        kind: .codexThreads, path: database.path, health: .error,
+                        detail: "Can't read \(database.lastPathComponent): \(error)"),
+                    SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .missing, detail: "No threads to look up"),
+                ])
         }
 
         let startOfDay = calendar.startOfDay(for: now)
@@ -106,7 +113,8 @@ public final class CodexReader {
                 session.turn = .ended
             } else if let path = row.string("rollout_path") {
                 let url = URL(filePath: path)
-                let activeToday = (updated ?? .distantPast) >= startOfDay
+                let activeToday =
+                    (updated ?? .distantPast) >= startOfDay
                     || (FileStamp(url)?.modified ?? .distantPast) >= startOfDay
                 do {
                     let summary = try rolloutSummary(at: url, activitySince: activeToday ? startOfDay : nil)
@@ -131,13 +139,19 @@ public final class CodexReader {
         if archived > 0 { detail += " · \(archived) archived" }
         detail += " · \(database.lastPathComponent)"
 
-        let threadStatus = skippedRows > 0
+        let threadStatus =
+            skippedRows > 0
             ? SourceStatus(kind: .codexThreads, path: database.path, health: .warning, detail: "Can't read \(skippedRows) rows. \(detail)")
             : SourceStatus(kind: .codexThreads, path: database.path, health: .ok, detail: detail)
         let active = sessions.count - archived
-        let rolloutStatus = rolloutProblems > 0
-            ? SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .warning, detail: "Can't read \(rolloutProblems) of \(active) rollouts")
-            : SourceStatus(kind: .codexRollouts, path: sessionsDir.path, health: .ok, detail: "\(rolloutsRead) rollout\(rolloutsRead == 1 ? "" : "s") · tails only")
+        let rolloutStatus =
+            rolloutProblems > 0
+            ? SourceStatus(
+                kind: .codexRollouts, path: sessionsDir.path, health: .warning,
+                detail: "Can't read \(rolloutProblems) of \(active) rollouts")
+            : SourceStatus(
+                kind: .codexRollouts, path: sessionsDir.path, health: .ok,
+                detail: "\(rolloutsRead) rollout\(rolloutsRead == 1 ? "" : "s") · tails only")
         return SourceRead(items: sessions, statuses: [threadStatus, rolloutStatus])
     }
 

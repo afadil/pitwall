@@ -76,33 +76,33 @@ public struct BoardRow: Identifiable, Hashable, Sendable {
 
     public var id: String {
         switch kind {
-        case let .lane(lane): "lane:\(lane.rawValue)"
-        case let .tag(tag): "tag:\(tag.id.uuidString)"
+        case .lane(let lane): "lane:\(lane.rawValue)"
+        case .tag(let tag): "tag:\(tag.id.uuidString)"
         case .untagged: "untagged"
-        case let .repository(repo): "repo:\(repo.key)"
+        case .repository(let repo): "repo:\(repo.key)"
         case .noRepository: "no-repo"
         }
     }
 
     public var title: String {
         switch kind {
-        case let .lane(lane): lane.title
-        case let .tag(tag): tag.name
+        case .lane(let lane): lane.title
+        case .tag(let tag): tag.name
         case .untagged: "No tag"
-        case let .repository(repo): repo.displayName
+        case .repository(let repo): repo.displayName
         case .noRepository: "No repository"
         }
     }
 
     /// The lane a card moves to when dropped here.
     public var dropLane: Lane {
-        if case let .lane(lane) = kind { return lane }
+        if case .lane(let lane) = kind { return lane }
         return .normal
     }
 
     /// The tag a card gains when dropped here.
     public var dropTag: UUID? {
-        if case let .tag(tag) = kind { return tag.id }
+        if case .tag(let tag) = kind { return tag.id }
         return nil
     }
 

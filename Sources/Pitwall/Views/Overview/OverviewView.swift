@@ -69,10 +69,13 @@ struct OverviewView: View {
         return VStack(alignment: .leading, spacing: 12) {
             SectionHeader("Pull requests")
             if recent.isEmpty {
-                Text(model.github.fetchedAt == nil ? "Pull requests appear once gh has been asked." : "No pull requests linked to your sessions yet.")
-                    .font(.callout)
-                    .foregroundStyle(.tertiary)
-                    .padding(.vertical, 8)
+                Text(
+                    model.github.fetchedAt == nil
+                        ? "Pull requests appear once gh has been asked." : "No pull requests linked to your sessions yet."
+                )
+                .font(.callout)
+                .foregroundStyle(.tertiary)
+                .padding(.vertical, 8)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(recent.enumerated()), id: \.element.id) { index, task in
@@ -100,7 +103,10 @@ struct StatCard: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(count)")
                         .font(.system(size: 40, weight: .medium).monospacedDigit())
-                        .foregroundStyle(count > 0 && (column == .working || column == .waiting) ? AnyShapeStyle(Theme.accentText) : AnyShapeStyle(.primary))
+                        .foregroundStyle(
+                            count > 0 && (column == .working || column == .waiting)
+                                ? AnyShapeStyle(Theme.accentText) : AnyShapeStyle(.primary)
+                        )
                         .contentTransition(.numericText(value: Double(count)))
                     Spacer()
                     if column == .working, count > 0 {

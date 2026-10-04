@@ -33,7 +33,7 @@ public struct OrganizationStore: Sendable {
         do {
             try fm.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try fm.moveItem(at: legacy, to: url)
-            try? fm.removeItem(at: legacy.deletingLastPathComponent()) // only succeeds if now empty
+            try? fm.removeItem(at: legacy.deletingLastPathComponent())  // only succeeds if now empty
             return true
         } catch {
             return false
@@ -60,8 +60,9 @@ public struct OrganizationStore: Sendable {
             let stamp = Int(Date().timeIntervalSince1970)
             let aside = url.deletingPathExtension().appendingPathExtension("unreadable-\(stamp).json")
             try? FileManager.default.moveItem(at: url, to: aside)
-            return Loaded(organization: Organization(), isNew: false,
-                          problem: "Can't read organization.json. It was kept as \(aside.lastPathComponent).")
+            return Loaded(
+                organization: Organization(), isNew: false,
+                problem: "Can't read organization.json. It was kept as \(aside.lastPathComponent).")
         }
     }
 

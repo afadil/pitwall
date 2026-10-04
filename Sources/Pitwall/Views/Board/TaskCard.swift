@@ -41,10 +41,12 @@ struct TaskCard: View {
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
         // Click selects and shows details; double-click opens the session in its app.
         .gesture(TapGesture(count: 2).onEnded { model.openInApp(task) })
-        .simultaneousGesture(TapGesture().onEnded {
-            model.select(task)
-            model.inspectorOpen = true
-        })
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                model.select(task)
+                model.inspectorOpen = true
+            }
+        )
         .help(task.sessionToOpen.map { "Double-click to open in \($0.app.displayName)" } ?? "")
         // Drag between lanes; the column never changes.
         .draggable(task.id) {
@@ -58,7 +60,10 @@ struct TaskCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityDescription(task, now: model.now))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityAction { model.select(task); model.inspectorOpen = true }
+        .accessibilityAction {
+            model.select(task)
+            model.inspectorOpen = true
+        }
         .accessibilityActions { TaskAccessibilityActions(task: task) }
     }
 

@@ -1,6 +1,6 @@
-import PitwallCore
 import AppKit
 import Observation
+import PitwallCore
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -294,8 +294,9 @@ final class AppModel {
 
     func show(_ kind: Toast.Kind, _ message: String) {
         toast = Toast(kind: kind, message: message)
-        NSAccessibility.post(element: NSApp as Any, notification: .announcementRequested,
-                             userInfo: [.announcement: message, .priority: NSAccessibilityPriorityLevel.medium.rawValue])
+        NSAccessibility.post(
+            element: NSApp as Any, notification: .announcementRequested,
+            userInfo: [.announcement: message, .priority: NSAccessibilityPriorityLevel.medium.rawValue])
         toastTask?.cancel()
         toastTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3.5))
@@ -317,7 +318,8 @@ final class AppModel {
     private static func loadSettings() -> BoardSettings {
         adoptLegacyDefaults()
         guard let data = UserDefaults.standard.data(forKey: settingsKey),
-              let settings = try? JSONDecoder().decode(BoardSettings.self, from: data) else { return BoardSettings() }
+            let settings = try? JSONDecoder().decode(BoardSettings.self, from: data)
+        else { return BoardSettings() }
         return settings
     }
 
@@ -325,7 +327,8 @@ final class AppModel {
     private static func adoptLegacyDefaults() {
         let defaults = UserDefaults.standard
         guard defaults.data(forKey: settingsKey) == nil,
-              let legacy = UserDefaults(suiteName: legacyDefaultsDomain) else { return }
+            let legacy = UserDefaults(suiteName: legacyDefaultsDomain)
+        else { return }
         for key in [settingsKey, "doneCollapsed", "collapsedRows"] {
             if let value = legacy.object(forKey: key) { defaults.set(value, forKey: key) }
         }

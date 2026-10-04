@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("gh JSON parsing")
@@ -43,8 +44,8 @@ struct GHParsingTests {
     @Test func checkRunAndStatusContextOutcomes() throws {
         let prs = try orbitPRs()
         #expect(prs.first { $0.number == 35 }?.checks.state == .failing)
-        #expect(prs.first { $0.number == 33 }?.checks == CheckSummary(pending: 2)) // IN_PROGRESS + PENDING context
-        #expect(prs.first { $0.number == 32 }?.checks.state == .passing) // SUCCESS context
+        #expect(prs.first { $0.number == 33 }?.checks == CheckSummary(pending: 2))  // IN_PROGRESS + PENDING context
+        #expect(prs.first { $0.number == 32 }?.checks.state == .passing)  // SUCCESS context
         #expect(prs.first { $0.number == 41 }?.checks.state == CIState.none)
     }
 
@@ -56,8 +57,8 @@ struct GHParsingTests {
         #expect(prs.first { $0.number == 39 }?.isDraft == true)
         #expect(prs.first { $0.number == 34 }?.reviewDecision == .changesRequested)
         #expect(prs.first { $0.number == 32 }?.reviewDecision == .reviewRequired)
-        #expect(prs.first { $0.number == 41 }?.reviewDecision == ReviewDecision.none) // ""
-        #expect(prs.first { $0.number == 33 }?.mergedAt == nil) // "0001-01-01T00:00:00Z"
+        #expect(prs.first { $0.number == 41 }?.reviewDecision == ReviewDecision.none)  // ""
+        #expect(prs.first { $0.number == 33 }?.mergedAt == nil)  // "0001-01-01T00:00:00Z"
         #expect(prs.first { $0.number == 37 }?.isCrossRepository == true)
         #expect(prs.first { $0.number == 37 }?.headOwner == "someone-else")
     }
@@ -76,35 +77,50 @@ struct GHParsingTests {
     }
 
     @Test func classifiesGHFailures() {
-        #expect(GHError.from(ProcessResult(exitCode: 4, stderr: Data("To get started with GitHub CLI, please run:  gh auth login".utf8))) == .notSignedIn)
-        #expect(GHError.from(ProcessResult(exitCode: 1, stderr: Data("You are not logged into any GitHub hosts. Run gh auth login to authenticate.".utf8))) == .notSignedIn)
-        #expect(GHError.from(ProcessResult(exitCode: 1, stderr: Data("GraphQL: Could not resolve to a Repository\nmore".utf8)))
-            == .failed(exitCode: 1, message: "GraphQL: Could not resolve to a Repository"))
+        #expect(
+            GHError.from(ProcessResult(exitCode: 4, stderr: Data("To get started with GitHub CLI, please run:  gh auth login".utf8)))
+                == .notSignedIn)
+        #expect(
+            GHError.from(
+                ProcessResult(
+                    exitCode: 1, stderr: Data("You are not logged into any GitHub hosts. Run gh auth login to authenticate.".utf8)))
+                == .notSignedIn)
+        #expect(
+            GHError.from(ProcessResult(exitCode: 1, stderr: Data("GraphQL: Could not resolve to a Repository\nmore".utf8)))
+                == .failed(exitCode: 1, message: "GraphQL: Could not resolve to a Repository"))
     }
 
     @Test func listReadsRecentAndOpenPullRequests() async throws {
         let gh = FakeGH()
         try gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "all"], json: "github/pr-list-acme-orbit.json")
         // An old open PR that is not among the newest 100.
-        gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"], with: ProcessResult(exitCode: 0, stdout: Data("""
-        [{"number": 7, "title": "Old but open", "headRefName": "feat/ancient", "state": "OPEN", "isDraft": false,
-          "reviewDecision": "", "statusCheckRollup": [], "isCrossRepository": false, "headRepositoryOwner": {"login": "acme"}}]
-        """.utf8)))
+        gh.respond(
+            to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"],
+            with: ProcessResult(
+                exitCode: 0,
+                stdout: Data(
+                    """
+                    [{"number": 7, "title": "Old but open", "headRefName": "feat/ancient", "state": "OPEN", "isDraft": false,
+                      "reviewDecision": "", "statusCheckRollup": [], "isCrossRepository": false, "headRepositoryOwner": {"login": "acme"}}]
+                    """.utf8)))
         let prs = try await GitHubClient(runner: gh).pullRequests(repo: "acme/orbit")
         #expect(prs.count == 12)
         #expect(prs.contains { $0.number == 7 && $0.headRefName == "feat/ancient" })
-        let fields = "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner,labels"
-        #expect(Set(gh.recorded.map { $0.joined(separator: " ") }) == [
-            "pr list --repo acme/orbit --state all --limit 100 --search sort:updated-desc --json \(fields)",
-            "pr list --repo acme/orbit --state open --limit 200 --json \(fields)",
-        ])
+        let fields =
+            "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner,labels"
+        #expect(
+            Set(gh.recorded.map { $0.joined(separator: " ") }) == [
+                "pr list --repo acme/orbit --state all --limit 100 --search sort:updated-desc --json \(fields)",
+                "pr list --repo acme/orbit --state open --limit 200 --json \(fields)",
+            ])
         #expect(gh.writeCalls.isEmpty)
     }
 
     @Test func oneFailedListStillReturnsTheOther() async throws {
         let gh = FakeGH()
         try gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "all"], json: "github/pr-list-acme-orbit.json")
-        gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"], with: ProcessResult(exitCode: 1, stderr: Data("HTTP 502".utf8)))
+        gh.respond(
+            to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"], with: ProcessResult(exitCode: 1, stderr: Data("HTTP 502".utf8)))
         #expect(try await GitHubClient(runner: gh).pullRequests(repo: "acme/orbit").count == 11)
     }
 
@@ -147,8 +163,9 @@ struct PRMatchingTests {
 
     @Test func forkCheckoutMatchesItsPRUpstream() {
         // Local clone of me/orbit with upstream acme/orbit; the PR lives upstream.
-        let fork = ResolvedRepo(id: RepoID(host: "github.com", owner: "me", name: "orbit"),
-                                upstream: RepoID(host: "github.com", owner: "acme", name: "orbit"))
+        let fork = ResolvedRepo(
+            id: RepoID(host: "github.com", owner: "me", name: "orbit"),
+            upstream: RepoID(host: "github.com", owner: "acme", name: "orbit"))
         let upstreamPR = PullRequest.make(9, repo: "acme/orbit", branch: "feat/x", crossRepo: true, headOwner: "me")
         let stranger = PullRequest.make(10, repo: "acme/orbit", branch: "feat/x", crossRepo: true, headOwner: "stranger")
         #expect(PRMatcher.match(branch: "feat/x", repo: fork, in: [stranger, upstreamPR])?.number == 9)

@@ -9,12 +9,15 @@ struct RepoToggleRow: View {
         let included = !model.settings.excludedRepos.contains(repo.key)
         let count = model.board.tasks.filter { $0.repo == repo }.count
         SettingsRow(repo.displayName, detail: detail(count: count), mono: true) {
-            Toggle(repo.displayName, isOn: Binding(
-                get: { included },
-                set: { on in
-                    if on { model.settings.excludedRepos.remove(repo.key) } else { model.settings.excludedRepos.insert(repo.key) }
-                }
-            ))
+            Toggle(
+                repo.displayName,
+                isOn: Binding(
+                    get: { included },
+                    set: { on in
+                        if on { model.settings.excludedRepos.remove(repo.key) } else { model.settings.excludedRepos.insert(repo.key) }
+                    }
+                )
+            )
             .labelsHidden()
             .toggleStyle(.switch)
         }
@@ -23,8 +26,11 @@ struct RepoToggleRow: View {
     private func detail(count: Int) -> String {
         var parts: [String] = []
         if repo.githubSlug == nil { parts.append(repo.host == nil ? "Local, no remote" : "Not on GitHub") }
-        if !model.settings.excludedRepos.contains(repo.key) { parts.append("\(count) task\(count == 1 ? "" : "s")") }
-        else { parts.append("Excluded") }
+        if !model.settings.excludedRepos.contains(repo.key) {
+            parts.append("\(count) task\(count == 1 ? "" : "s")")
+        } else {
+            parts.append("Excluded")
+        }
         return parts.joined(separator: " · ")
     }
 }
@@ -77,7 +83,11 @@ struct TagSettingsRow: View {
                     Button {
                         model.organization.recolorTag(tag.id, to: color)
                     } label: {
-                        Label { Text(color.title) } icon: { Image(systemName: "circle.fill").foregroundStyle(color.color) }
+                        Label {
+                            Text(color.title)
+                        } icon: {
+                            Image(systemName: "circle.fill").foregroundStyle(color.color)
+                        }
                     }
                 }
             } label: {
@@ -91,7 +101,10 @@ struct TagSettingsRow: View {
             TextField("Name", text: $name)
                 .textFieldStyle(.plain)
                 .font(.callout)
-                .onSubmit { model.organization.renameTag(tag.id, to: name); name = tag.name }
+                .onSubmit {
+                    model.organization.renameTag(tag.id, to: name)
+                    name = tag.name
+                }
                 .accessibilityLabel("Tag name")
             Spacer()
             let count = model.cardsUsing(tag)

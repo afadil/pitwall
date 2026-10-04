@@ -8,7 +8,9 @@ public struct LocalSnapshot: Sendable {
     public var statuses: [SourceStatus]
     public var readAt: Date
 
-    public init(sessions: [AgentSession] = [], repos: [String: ResolvedRepo] = [:], statuses: [SourceStatus] = [], readAt: Date = .distantPast) {
+    public init(
+        sessions: [AgentSession] = [], repos: [String: ResolvedRepo] = [:], statuses: [SourceStatus] = [], readAt: Date = .distantPast
+    ) {
         self.sessions = sessions
         self.repos = repos
         self.statuses = statuses
@@ -26,7 +28,8 @@ public struct LocalSnapshot: Sendable {
                 if let slug = link.repo.githubSlug { slugs.insert(slug) }
             }
             guard let repo = repos[session.id], !settings.excludedRepos.contains(repo.id.key),
-                  let branch = session.branch, !repo.isDefaultBranch(branch) else { continue }
+                let branch = session.branch, !repo.isDefaultBranch(branch)
+            else { continue }
             slugs.formUnion(repo.pullRequestSources)
         }
         return slugs.sorted()

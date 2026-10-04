@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Grouping sessions into tasks")
@@ -15,14 +16,16 @@ struct BoardBuilderTests {
     }
 
     @Test func claudeAndCodexOnTheSameBranchShareOneCard() throws {
-        let claude = AgentSession.make(.claude, id: "c1", title: "Add offline sync queue", branch: "feat/offline-sync", lastActivity: testNow.addingTimeInterval(-600))
-        let codex = AgentSession.make(.codex, id: "x1", title: "Add offline sync tests", branch: "feat/offline-sync", lastActivity: testNow.addingTimeInterval(-300))
+        let claude = AgentSession.make(
+            .claude, id: "c1", title: "Add offline sync queue", branch: "feat/offline-sync", lastActivity: testNow.addingTimeInterval(-600))
+        let codex = AgentSession.make(
+            .codex, id: "x1", title: "Add offline sync tests", branch: "feat/offline-sync", lastActivity: testNow.addingTimeInterval(-300))
         let board = build([claude, codex])
         #expect(board.tasks.count == 1)
         let task = try #require(board.tasks.first)
         #expect(task.id == "github.com/acme/orbit#feat/offline-sync")
         #expect(task.apps == [.claude, .codex])
-        #expect(task.title == "Add offline sync tests") // newest session first
+        #expect(task.title == "Add offline sync tests")  // newest session first
         #expect(task.locationLine == "acme/orbit · feat/offline-sync")
     }
 
@@ -81,8 +84,9 @@ struct BoardBuilderTests {
         var org = Organization()
         org.setHidden(true, for: "github.com/acme/orbit#feat/a", now: testNow)
         func build(_ settings: BoardSettings, repos: [String: ResolvedRepo]? = nil, organization: Organization? = nil) -> Board {
-            BoardBuilder.build(sessions: [a, b], repos: repos ?? [a.id: orbit, b.id: orbit], pullRequests: [:],
-                               settings: settings, organization: organization ?? org, now: testNow)
+            BoardBuilder.build(
+                sessions: [a, b], repos: repos ?? [a.id: orbit, b.id: orbit], pullRequests: [:],
+                settings: settings, organization: organization ?? org, now: testNow)
         }
         #expect(build(BoardSettings()).tasks.map(\.id) == ["github.com/acme/orbit#feat/b"])
 
@@ -90,8 +94,9 @@ struct BoardBuilderTests {
         #expect(shown.tasks.count == 2)
         #expect(shown.tasks.first { $0.id.hasSuffix("feat/a") }?.isHidden == true)
 
-        let excluded = build(BoardSettings(excludedRepos: ["github.com/acme/lumen"]), repos: [a.id: orbit, b.id: lumen],
-                             organization: Organization())
+        let excluded = build(
+            BoardSettings(excludedRepos: ["github.com/acme/lumen"]), repos: [a.id: orbit, b.id: lumen],
+            organization: Organization())
         #expect(excluded.tasks.count == 1)
         // Excluded repos still appear in the repo list so they can be re-included.
         #expect(excluded.repos.map(\.key).contains("github.com/acme/lumen"))
@@ -99,7 +104,8 @@ struct BoardBuilderTests {
 
     @Test func linkedPullRequestsFollowTheirSessionAcrossBranches() throws {
         // The session opened PR #12 on feat/a, then its checkout moved to feat/b and it kept working.
-        var session = AgentSession.make(id: "s", title: "Session title", branch: "feat/b", lastActivity: testNow.addingTimeInterval(-60), turn: .running)
+        var session = AgentSession.make(
+            id: "s", title: "Session title", branch: "feat/b", lastActivity: testNow.addingTimeInterval(-60), turn: .running)
         session.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "feat/a", number: 12)]
         let pr = PullRequest.make(12, branch: "feat/a", review: .approved, updated: testNow.addingTimeInterval(-7200))
         let board = build([session], prs: ["acme/orbit": [pr]])
@@ -145,7 +151,10 @@ struct BoardBuilderTests {
     @Test func timelineBlocksAreClippedToTheDay() {
         var s = AgentSession.make(id: "a", branch: "feat/a")
         let day = utcCalendar.dateInterval(of: .day, for: testNow)!
-        s.activity = [DateInterval(start: day.start.addingTimeInterval(-600), duration: 1200), DateInterval(start: testNow.addingTimeInterval(-300), duration: 120)]
+        s.activity = [
+            DateInterval(start: day.start.addingTimeInterval(-600), duration: 1200),
+            DateInterval(start: testNow.addingTimeInterval(-300), duration: 120),
+        ]
         let blocks = Timeline.blocks(for: build([s]).tasks, in: day)
         #expect(blocks.count == 2)
         #expect(blocks[0].interval.start == day.start)

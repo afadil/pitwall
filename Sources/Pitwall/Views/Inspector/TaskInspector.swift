@@ -88,8 +88,10 @@ struct TaskInspector: View {
     private var organizeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader("Lane")
-            SoftSegmentedControl(label: "Lane", options: Lane.allCases,
-                                 selection: Binding(get: { task.lane }, set: { model.setLane($0, for: task) })) { $0.title }
+            SoftSegmentedControl(
+                label: "Lane", options: Lane.allCases,
+                selection: Binding(get: { task.lane }, set: { model.setLane($0, for: task) })
+            ) { $0.title }
             if task.stack != nil {
                 Text("Moves the whole stack.")
                     .font(.caption)
@@ -102,7 +104,11 @@ struct TaskInspector: View {
                         Button {
                             model.setTag(tag, on: true, for: task)
                         } label: {
-                            Label { Text(tag.name) } icon: { Image(systemName: "circle.fill").foregroundStyle(tag.color.color) }
+                            Label {
+                                Text(tag.name)
+                            } icon: {
+                                Image(systemName: "circle.fill").foregroundStyle(tag.color.color)
+                            }
                         }
                     }
                     if !unused.isEmpty { Divider() }
@@ -215,7 +221,9 @@ struct TaskInspector: View {
             SectionHeader("Stack · \(stack.members.count)")
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(stack.members.enumerated()), id: \.element) { index, number in
-                    let peer = model.board.tasks.first { $0.pullRequest?.number == number && $0.pullRequest?.repo == task.pullRequest?.repo }
+                    let peer = model.board.tasks.first {
+                        $0.pullRequest?.number == number && $0.pullRequest?.repo == task.pullRequest?.repo
+                    }
                     HStack(spacing: 8) {
                         Image(systemName: index == 0 ? "circle.fill" : "arrow.turn.left.up")
                             .font(.system(size: index == 0 ? 5 : 9, weight: .semibold))

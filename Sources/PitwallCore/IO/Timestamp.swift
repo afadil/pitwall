@@ -32,7 +32,8 @@ enum Timestamp {
     private static func fastParse(_ string: String) -> Date? {
         let utf8 = Array(string.utf8)
         guard utf8.count >= 20, utf8[4] == 0x2D, utf8[7] == 0x2D, utf8[10] == 0x54,
-              utf8[13] == 0x3A, utf8[16] == 0x3A, utf8.last == 0x5A else { return nil }
+            utf8[13] == 0x3A, utf8[16] == 0x3A, utf8.last == 0x5A
+        else { return nil }
 
         func number(_ range: Range<Int>) -> Int? {
             var value = 0
@@ -45,8 +46,9 @@ enum Timestamp {
         }
 
         guard let year = number(0..<4), let month = number(5..<7), let day = number(8..<10),
-              let hour = number(11..<13), let minute = number(14..<16), let second = number(17..<19),
-              (1...12).contains(month), (1...31).contains(day) else { return nil }
+            let hour = number(11..<13), let minute = number(14..<16), let second = number(17..<19),
+            (1...12).contains(month), (1...31).contains(day)
+        else { return nil }
 
         var fraction = 0.0
         if utf8[19] == 0x2E {

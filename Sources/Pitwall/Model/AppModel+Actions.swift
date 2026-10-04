@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// Things you do to a card: open it, copy from it, and the GitHub writes.
@@ -81,7 +81,7 @@ extension AppModel {
         guard let pr = task.pullRequest else { return }
         Task {
             await writes.request(action, for: pr)
-            if case let .failed(message) = writes.lastOutcome {
+            if case .failed(let message) = writes.lastOutcome {
                 show(.failure, message)
                 writes.clearOutcome()
             }
@@ -92,8 +92,8 @@ extension AppModel {
         Task {
             await writes.confirm()
             switch writes.lastOutcome {
-            case let .succeeded(message): show(.success, message)
-            case let .failed(message): show(.failure, message)
+            case .succeeded(let message): show(.success, message)
+            case .failed(let message): show(.failure, message)
             case nil: break
             }
             writes.clearOutcome()

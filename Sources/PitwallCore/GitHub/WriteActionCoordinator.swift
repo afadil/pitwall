@@ -48,7 +48,7 @@ public final class WriteActionCoordinator {
         }
         var allowed: [MergeMethod] = []
         var resolved = action
-        if case let .merge(preferred) = action {
+        if case .merge(let preferred) = action {
             allowed = (try? await client.mergeMethods(repo: pr.repo)) ?? MergeMethod.allCases
             resolved = .merge(allowed.contains(preferred) ? preferred : allowed.first ?? preferred)
         }
@@ -73,10 +73,11 @@ public final class WriteActionCoordinator {
         do throws(WriteError) {
             try await writer.perform(write, confirmation: Confirmation(writeID: write.id))
             pending = nil
-            let what = switch write.action {
-            case .markReady: "marked ready for review"
-            case .merge: "merged"
-            }
+            let what =
+                switch write.action {
+                case .markReady: "marked ready for review"
+                case .merge: "merged"
+                }
             lastOutcome = .succeeded("Pull request #\(write.pullRequest.number) \(what).")
             onSuccess()
         } catch {

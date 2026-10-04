@@ -38,7 +38,8 @@ public struct ClaudeSessionMetadata: Sendable, Hashable {
     /// `{prNumber, repo: "owner/name", host, branch, dismissed?}` → link, GitHub only.
     static func linkedPullRequest(_ entry: [String: Any]) -> LinkedPullRequest? {
         guard entry.bool("dismissed") != true,
-              let slug = entry.string("repo"), let branch = entry.string("branch") else { return nil }
+            let slug = entry.string("repo"), let branch = entry.string("branch")
+        else { return nil }
         let host = entry.string("host") ?? "github.com"
         guard host.lowercased() == "github.com" else { return nil }
         let parts = slug.split(separator: "/").map(String.init)

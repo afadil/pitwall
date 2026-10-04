@@ -102,15 +102,20 @@ private struct DoneRow: View {
         .contentShape(Rectangle())
         .onHover { hovered = $0 }
         .gesture(TapGesture(count: 2).onEnded { model.openInApp(task) })
-        .simultaneousGesture(TapGesture().onEnded {
-            model.select(task)
-            model.inspectorOpen = true
-        })
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                model.select(task)
+                model.inspectorOpen = true
+            }
+        )
         .contextMenu { TaskActionsMenu(task: task) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(TaskCard.accessibilityDescription(task, now: model.now))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityAction { model.select(task); model.inspectorOpen = true }
+        .accessibilityAction {
+            model.select(task)
+            model.inspectorOpen = true
+        }
         .accessibilityActions { TaskAccessibilityActions(task: task) }
     }
 }

@@ -64,10 +64,10 @@ public actor RefreshEngine {
         var snapshot = GitHubSnapshot(fetchedAt: now)
         for (slug, result) in results {
             switch result {
-            case let .success(prs):
+            case .success(let prs):
                 lastGood[slug] = prs
                 snapshot.pullRequests[slug] = prs
-            case let .failure(error):
+            case .failure(let error):
                 snapshot.errors[slug] = error
                 if let previous = lastGood[slug] { snapshot.pullRequests[slug] = previous }
             }

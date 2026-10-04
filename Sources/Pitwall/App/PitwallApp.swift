@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 @main
@@ -19,12 +19,14 @@ struct PitwallApp: App {
         .defaultLaunchBehavior(.presented)
         .commands { AppCommands(model: model) }
 
-        MenuBarExtra(isInserted: Binding(
-            get: { model.settings.showMenuBarExtra },
-            // Assign only on change: the system sets this when it inserts the item,
-            // and an unconditional write would re-trigger scene updates forever.
-            set: { if model.settings.showMenuBarExtra != $0 { model.settings.showMenuBarExtra = $0 } }
-        )) {
+        MenuBarExtra(
+            isInserted: Binding(
+                get: { model.settings.showMenuBarExtra },
+                // Assign only on change: the system sets this when it inserts the item,
+                // and an unconditional write would re-trigger scene updates forever.
+                set: { if model.settings.showMenuBarExtra != $0 { model.settings.showMenuBarExtra = $0 } }
+            )
+        ) {
             MenuBarPanel()
                 .environment(model)
                 .tint(Theme.accent)

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("File watcher")
@@ -12,8 +13,10 @@ struct FileWatcherTests {
         try FileManager.default.createDirectory(at: paths.codexHome, withIntermediateDirectories: true)
 
         let counter = Counter()
-        let watcher = FileWatcher(paths: [paths.claudeProjects, paths.codexHome], latency: 0.1,
-                                  filter: FileWatcher.relevantFilter(paths: paths)) { counter.increment() }
+        let watcher = FileWatcher(
+            paths: [paths.claudeProjects, paths.codexHome], latency: 0.1,
+            filter: FileWatcher.relevantFilter(paths: paths)
+        ) { counter.increment() }
         defer { withExtendedLifetime(watcher) {} }
         try await Task.sleep(for: .milliseconds(300))
 

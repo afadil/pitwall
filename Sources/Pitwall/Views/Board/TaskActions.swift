@@ -12,7 +12,9 @@ struct TaskActionsMenu: View {
             Button("Open in \(session.app.displayName)", systemImage: "arrow.up.forward.app") { model.openInApp(session) }
         } else if openable.count > 1 {
             ForEach(openable) { session in
-                Button("Open in \(session.app.displayName): \(session.title)", systemImage: "arrow.up.forward.app") { model.openInApp(session) }
+                Button("Open in \(session.app.displayName): \(session.title)", systemImage: "arrow.up.forward.app") {
+                    model.openInApp(session)
+                }
             }
         }
         if task.pullRequest?.url != nil {
@@ -104,7 +106,11 @@ struct OrganizeMenu: View {
         Menu("Tags", systemImage: "tag") {
             ForEach(model.organization.tags) { tag in
                 Toggle(isOn: Binding(get: { model.hasTag(tag, task) }, set: { model.setTag(tag, on: $0, for: task) })) {
-                    Label { Text(tag.name) } icon: { Image(systemName: "circle.fill").foregroundStyle(tag.color.color) }
+                    Label {
+                        Text(tag.name)
+                    } icon: {
+                        Image(systemName: "circle.fill").foregroundStyle(tag.color.color)
+                    }
                 }
             }
             if !model.organization.tags.isEmpty { Divider() }

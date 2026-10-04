@@ -28,8 +28,10 @@ public enum DemoData {
         var sessions: [AgentSession] = []
         var repos: [String: ResolvedRepo] = [:]
 
-        func add(_ app: AgentApp, _ id: String, _ title: String, _ repo: ResolvedRepo?, _ branch: String?,
-                 ago: Double, turn: TurnState = .ended, activity: [(Double, Double)] = [], archived: Bool = false) {
+        func add(
+            _ app: AgentApp, _ id: String, _ title: String, _ repo: ResolvedRepo?, _ branch: String?,
+            ago: Double, turn: TurnState = .ended, activity: [(Double, Double)] = [], archived: Bool = false
+        ) {
             let folder = repo?.id.localPath ?? "/Users/demo/work/\(repo?.id.name ?? "scratch")"
             let session = AgentSession(
                 app: app, sessionID: id, resumeID: "\(id)-0000-4000-8000-demo", title: title,
@@ -42,11 +44,14 @@ public enum DemoData {
         }
 
         // Working
-        add(.claude, "c01", "Queue offline edits and sync on reconnect", orbit, "feat/offline-sync", ago: 1, turn: .running,
+        add(
+            .claude, "c01", "Queue offline edits and sync on reconnect", orbit, "feat/offline-sync", ago: 1, turn: .running,
             activity: [(8.6, 9.4), (10.1, 11.3), (13.2, 14.0), (14.6, 24)])
-        add(.codex, "x01", "Write tests for the offline queue", orbit, "feat/offline-sync", ago: 6,
+        add(
+            .codex, "x01", "Write tests for the offline queue", orbit, "feat/offline-sync", ago: 6,
             activity: [(11.0, 11.6), (14.2, 14.9)])
-        add(.codex, "x02", "Return rate-limit headers on 429", atlas, "fix/rate-limit-headers", ago: 2, turn: .running,
+        add(
+            .codex, "x02", "Return rate-limit headers on 429", atlas, "fix/rate-limit-headers", ago: 2, turn: .running,
             activity: [(9.5, 10.2), (15.0, 24)])
 
         // Waiting on you
@@ -73,9 +78,11 @@ public enum DemoData {
         add(.codex, "x08", "Accessibility labels for charts", lumen, "codex/a11y-labels", ago: 60 * 70)
         add(.claude, "c10", "Remove legacy v1 endpoint", atlas, "feat/drop-v1", ago: 60 * 120)
 
-        func pr(_ repo: ResolvedRepo, _ number: Int, _ title: String, _ branch: String, base: String = "main", state: PRState = .open,
-                draft: Bool = false, review: ReviewDecision = .none, checks: CheckSummary = CheckSummary(passed: 6, skipped: 1),
-                ago: Double) -> PullRequest {
+        func pr(
+            _ repo: ResolvedRepo, _ number: Int, _ title: String, _ branch: String, base: String = "main", state: PRState = .open,
+            draft: Bool = false, review: ReviewDecision = .none, checks: CheckSummary = CheckSummary(passed: 6, skipped: 1),
+            ago: Double
+        ) -> PullRequest {
             let when = minutes(ago)
             let slug = repo.id.githubSlug ?? ""
             return PullRequest(
@@ -101,14 +108,18 @@ public enum DemoData {
             ],
             "acme/atlas-api": [
                 pr(atlas, 231, "feat(webhooks): retry with backoff", "feat/webhook-retry", review: .changesRequested, ago: 200),
-                pr(atlas, 233, "feat(webhooks): sign payloads", "feat/webhook-signing", base: "feat/webhook-retry", review: .approved, ago: 230),
+                pr(
+                    atlas, 233, "feat(webhooks): sign payloads", "feat/webhook-signing", base: "feat/webhook-retry", review: .approved,
+                    ago: 230),
                 pr(atlas, 229, "chore(deps): October bumps", "chore/deps-oct", ago: 380),
                 pr(atlas, 224, "Remove v1 endpoint", "feat/drop-v1", state: .closed, ago: 60 * 118),
             ],
         ]
 
         let statuses = [
-            SourceStatus(kind: .claudeSessions, path: "~/Library/Application Support/Claude/claude-code-sessions", health: .ok, detail: "10 sessions"),
+            SourceStatus(
+                kind: .claudeSessions, path: "~/Library/Application Support/Claude/claude-code-sessions", health: .ok, detail: "10 sessions"
+            ),
             SourceStatus(kind: .claudeTranscripts, path: "~/.claude/projects", health: .ok, detail: "10 transcripts · tails only"),
             SourceStatus(kind: .codexThreads, path: "~/.codex/state_5.sqlite", health: .ok, detail: "8 threads · state_5.sqlite"),
             SourceStatus(kind: .codexRollouts, path: "~/.codex/sessions", health: .ok, detail: "8 rollouts · tails only"),
@@ -147,8 +158,9 @@ public enum DemoData {
 
     public static func board(now: Date = Date(), calendar: Calendar = .current, settings: BoardSettings = BoardSettings()) -> Board {
         let snap = snapshot(now: now, calendar: calendar)
-        return BoardBuilder.build(sessions: snap.local.sessions, repos: snap.local.repos,
-                                  pullRequests: snap.github.pullRequests, settings: settings,
-                                  organization: organization(now: now), now: now)
+        return BoardBuilder.build(
+            sessions: snap.local.sessions, repos: snap.local.repos,
+            pullRequests: snap.github.pullRequests, settings: settings,
+            organization: organization(now: now), now: now)
     }
 }

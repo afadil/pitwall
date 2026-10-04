@@ -7,7 +7,7 @@ struct Rail: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Color.clear.frame(height: 44) // room for the traffic lights
+            Color.clear.frame(height: 44)  // room for the traffic lights
             AppMark(size: 30)
                 .padding(.bottom, 14)
                 .accessibilityHidden(true)

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Board column rules")
@@ -22,14 +23,16 @@ struct BoardRulesTests {
     }
 
     @Test func stalledTurnIsWaitingOnYou() {
-        let s = AgentSession.make(id: "s", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-3600), turn: .running,
-                                  lastWrite: testNow.addingTimeInterval(-11 * 60))
+        let s = AgentSession.make(
+            id: "s", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-3600), turn: .running,
+            lastWrite: testNow.addingTimeInterval(-11 * 60))
         #expect(place([s])?.0 == .waiting)
     }
 
     @Test func subAgentWritesKeepATurnAlive() {
-        let s = AgentSession.make(id: "s", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-30 * 60), turn: .running,
-                                  lastWrite: testNow.addingTimeInterval(-60))
+        let s = AgentSession.make(
+            id: "s", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-30 * 60), turn: .running,
+            lastWrite: testNow.addingTimeInterval(-60))
         #expect(place([s])?.0 == .working)
     }
 
@@ -49,10 +52,14 @@ struct BoardRulesTests {
 
     @Test func openPRReasons() {
         #expect(place([ended], .make(1, branch: "feat/x", draft: true))! == (.inReview, .draft))
-        #expect(place([ended], .make(1, branch: "feat/x", review: .approved, checks: .init(passed: 3, failed: 1)))! == (.inReview, .ciFailing))
+        #expect(
+            place([ended], .make(1, branch: "feat/x", review: .approved, checks: .init(passed: 3, failed: 1)))! == (.inReview, .ciFailing))
         #expect(place([ended], .make(1, branch: "feat/x", checks: .init(passed: 1, pending: 2)))! == (.inReview, .ciRunning))
         #expect(place([ended], .make(1, branch: "feat/x", review: .changesRequested))! == (.inReview, .changesRequested))
-        #expect(place([ended], .make(1, branch: "feat/x", review: .changesRequested, checks: .init(pending: 1)))! == (.inReview, .changesRequested))
+        #expect(
+            place([ended], .make(1, branch: "feat/x", review: .changesRequested, checks: .init(pending: 1)))! == (
+                .inReview, .changesRequested
+            ))
         #expect(place([ended], .make(1, branch: "feat/x", review: .reviewRequired))! == (.inReview, .awaitingReview))
     }
 

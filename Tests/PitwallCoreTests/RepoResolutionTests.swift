@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Branch and repo resolution")
@@ -33,7 +34,8 @@ struct RepoResolutionTests {
     }
 
     @Test func parsesGitOutput() {
-        let remotes = RepoResolver.parseRemotes("remote.origin.url https://github.com/me/orbit.git\nremote.upstream.url git@github.com:acme/orbit.git\njunk line\n")
+        let remotes = RepoResolver.parseRemotes(
+            "remote.origin.url https://github.com/me/orbit.git\nremote.upstream.url git@github.com:acme/orbit.git\njunk line\n")
         #expect(remotes == ["origin": "https://github.com/me/orbit.git", "upstream": "git@github.com:acme/orbit.git"])
         #expect(RepoResolver.parseDefaultBranch("origin/main\n") == "main")
         #expect(RepoResolver.parseDefaultBranch("origin/release/2026\n") == "release/2026")
@@ -43,7 +45,11 @@ struct RepoResolutionTests {
     @Test func resolvesOriginUpstreamAndDefaultBranch() async throws {
         let home = try FixtureHome()
         let dir = home.url.path
-        let git = FakeGit([dir: .init(remotes: ["origin": "git@github.com:me/orbit.git", "upstream": "https://github.com/acme/orbit"], defaultBranch: "origin/trunk")])
+        let git = FakeGit([
+            dir: .init(
+                remotes: ["origin": "git@github.com:me/orbit.git", "upstream": "https://github.com/acme/orbit"],
+                defaultBranch: "origin/trunk")
+        ])
         let resolver = RepoResolver(git: git)
         let resolved = try #require(await resolver.resolve(.make(id: "s1", cwd: dir, branch: "feat/x")))
         #expect(resolved.id.key == "github.com/me/orbit")

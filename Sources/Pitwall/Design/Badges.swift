@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// Small capsule naming the app a session came from, with its timeline colour.

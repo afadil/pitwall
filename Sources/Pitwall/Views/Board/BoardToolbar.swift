@@ -32,8 +32,10 @@ struct BoardToolbar: View {
             .background(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous).fill(Color.primary.opacity(0.06)))
             .overlay(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.5))
 
-            SoftIconButton(symbol: model.settings.showHidden ? "eye" : "eye.slash",
-                           label: model.settings.showHidden ? "Hide hidden cards" : "Show hidden cards", size: 30) {
+            SoftIconButton(
+                symbol: model.settings.showHidden ? "eye" : "eye.slash",
+                label: model.settings.showHidden ? "Hide hidden cards" : "Show hidden cards", size: 30
+            ) {
                 model.settings.showHidden.toggle()
             }
             SoftIconButton(symbol: "arrow.clockwise", label: "Refresh  ⌘R", size: 30) {
@@ -83,9 +85,16 @@ struct TagFilterMenu: View {
             if !model.organization.tags.isEmpty {
                 Section("Your tags") {
                     ForEach(model.organization.tags) { tag in
-                        Toggle(isOn: Binding(get: { model.tagFilter.tagIDs.contains(tag.id) },
-                                             set: { _ in model.tagFilter.toggle(tag: tag.id) })) {
-                            Label { Text(tag.name) } icon: { Image(systemName: "circle.fill").foregroundStyle(tag.color.color) }
+                        Toggle(
+                            isOn: Binding(
+                                get: { model.tagFilter.tagIDs.contains(tag.id) },
+                                set: { _ in model.tagFilter.toggle(tag: tag.id) })
+                        ) {
+                            Label {
+                                Text(tag.name)
+                            } icon: {
+                                Image(systemName: "circle.fill").foregroundStyle(tag.color.color)
+                            }
                         }
                     }
                 }
@@ -93,8 +102,11 @@ struct TagFilterMenu: View {
             if !labels.isEmpty {
                 Section("GitHub labels") {
                     ForEach(labels, id: \.name) { label in
-                        Toggle(label.name, isOn: Binding(get: { model.tagFilter.labels.contains(label.name.lowercased()) },
-                                                         set: { _ in model.tagFilter.toggle(label: label.name) }))
+                        Toggle(
+                            label.name,
+                            isOn: Binding(
+                                get: { model.tagFilter.labels.contains(label.name.lowercased()) },
+                                set: { _ in model.tagFilter.toggle(label: label.name) }))
                     }
                 }
             }
@@ -108,8 +120,9 @@ struct TagFilterMenu: View {
                 Button("Clear tag filter") { model.tagFilter = TagFilter(mode: model.tagFilter.mode) }
             }
         } label: {
-            ToolbarMenuLabel(symbol: "tag", text: model.tagFilter.isActive ? "\(model.tagFilter.count)" : "Tags",
-                             active: model.tagFilter.isActive)
+            ToolbarMenuLabel(
+                symbol: "tag", text: model.tagFilter.isActive ? "\(model.tagFilter.count)" : "Tags",
+                active: model.tagFilter.isActive)
         }
         .menuStyle(.button)
         .buttonStyle(.plain)

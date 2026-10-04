@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// Behind-window vibrancy. Falls back to an opaque fill automatically when

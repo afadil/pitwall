@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// Soft, rounded icon button (the "tactile" control from the references).
@@ -48,7 +48,10 @@ struct PillButton: View {
             .frame(height: 30)
             .foregroundStyle(prominent ? AnyShapeStyle(Color.white) : AnyShapeStyle(.primary))
             .background(
-                Capsule().fill(prominent ? AnyShapeStyle(Theme.accent.opacity(hovered ? 0.9 : 1)) : AnyShapeStyle(Color.primary.opacity(hovered ? 0.13 : 0.08)))
+                Capsule().fill(
+                    prominent
+                        ? AnyShapeStyle(Theme.accent.opacity(hovered ? 0.9 : 1))
+                        : AnyShapeStyle(Color.primary.opacity(hovered ? 0.13 : 0.08)))
             )
             .overlay(Capsule().strokeBorder(Theme.hairline, lineWidth: prominent ? 0 : 0.5))
             .contentShape(Capsule())
@@ -115,8 +118,10 @@ struct ToolbarMenuLabel: View {
         .foregroundStyle(active ? AnyShapeStyle(Theme.accentText) : AnyShapeStyle(.secondary))
         .padding(.horizontal, 10)
         .frame(height: 30)
-        .background(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous)
-            .fill(active ? Theme.accent.opacity(0.14) : Color.primary.opacity(0.06)))
+        .background(
+            RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous)
+                .fill(active ? Theme.accent.opacity(0.14) : Color.primary.opacity(0.06))
+        )
         .overlay(RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous).strokeBorder(Theme.hairline, lineWidth: 0.5))
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Codex reader", .serialized)
@@ -16,7 +17,7 @@ struct CodexReaderTests {
         #expect(byID["019a0003-0000-7000-8000-000000000003"] == nil)
 
         let csv = try #require(byID["019a0001-0000-7000-8000-000000000001"])
-        #expect(csv.title == "Fix CSV export rounding") // `name` wins over `title`
+        #expect(csv.title == "Fix CSV export rounding")  // `name` wins over `title`
         #expect(csv.branch == "codex/csv-rounding")
         #expect(csv.originURL == "https://github.com/acme/lumen.git")
         #expect(csv.turn == .ended)
@@ -27,20 +28,20 @@ struct CodexReaderTests {
         #expect(csv.activity.first?.start == date("2026-10-04T13:00:00Z"))
 
         let sync = try #require(byID["019a0002-0000-7000-8000-000000000002"])
-        #expect(sync.turn == .running) // task_started without task_complete
+        #expect(sync.turn == .running)  // task_started without task_complete
         #expect(sync.lastWrite != nil)
 
         let archived = try #require(byID["019a0004-0000-7000-8000-000000000004"])
         #expect(archived.isArchived)
-        #expect(archived.problem == nil) // archived rollouts move; that's not a problem
+        #expect(archived.problem == nil)  // archived rollouts move; that's not a problem
 
         let untitled = try #require(byID["019a0005-0000-7000-8000-000000000005"])
-        #expect(untitled.title == "Explain the sync protocol") // first line of `title`
+        #expect(untitled.title == "Explain the sync protocol")  // first line of `title`
         #expect(untitled.branch == nil)
         #expect(untitled.problem == "Can't find rollout")
 
         let aborted = try #require(byID["019a0006-0000-7000-8000-000000000006"])
-        #expect(aborted.turn == .ended) // turn_aborted
+        #expect(aborted.turn == .ended)  // turn_aborted
 
         let statuses = Dictionary(uniqueKeysWithValues: result.statuses.map { ($0.kind, $0) })
         #expect(statuses[.codexThreads]?.health == .ok)
@@ -62,8 +63,9 @@ struct CodexReaderTests {
     @Test func missingColumnsShowCantReadInsteadOfCrashing() throws {
         let home = try FixtureHome()
         try FileManager.default.createDirectory(at: home.paths.codexHome, withIntermediateDirectories: true)
-        try CodexDatabase.create(at: home.paths.codexHome.appending(path: "state_6.sqlite"), rows: [],
-                                 schema: "CREATE TABLE threads (id TEXT, cwd TEXT, title TEXT);")
+        try CodexDatabase.create(
+            at: home.paths.codexHome.appending(path: "state_6.sqlite"), rows: [],
+            schema: "CREATE TABLE threads (id TEXT, cwd TEXT, title TEXT);")
         let result = CodexReader(codexHome: home.paths.codexHome).read(now: testNow)
         #expect(result.items.isEmpty)
         #expect(result.statuses.first?.health == .error)
@@ -121,7 +123,10 @@ struct CodexReaderTests {
         }
         let item = Data(#"{"timestamp":"2026-10-04T10:05:00.000Z","type":"response_item","payload":{"type":"message"}}"#.utf8)
         #expect(CodexRollout.summarize(lines: [event("task_started", "2026-10-04T10:00:00.000Z"), item]).turn == .running)
-        #expect(CodexRollout.summarize(lines: [event("task_started", "2026-10-04T10:00:00.000Z"), event("task_complete", "2026-10-04T10:06:00.000Z")]).turn == .ended)
+        #expect(
+            CodexRollout.summarize(lines: [
+                event("task_started", "2026-10-04T10:00:00.000Z"), event("task_complete", "2026-10-04T10:06:00.000Z"),
+            ]).turn == .ended)
         #expect(CodexRollout.summarize(lines: [item]).turn == .unknown)
         #expect(CodexRollout.summarize(lines: [Data("{not json".utf8), event("turn_aborted", "2026-10-04T10:06:00.000Z")]).turn == .ended)
     }

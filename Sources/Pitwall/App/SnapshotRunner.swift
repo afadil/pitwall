@@ -1,5 +1,5 @@
-import PitwallCore
 import AppKit
+import PitwallCore
 import SwiftUI
 
 /// `--snapshot-dir` support: shows each screen in turn, has `Scripts/snapshots.sh`
@@ -37,7 +37,9 @@ enum SnapshotRunner {
 
         let size = NSSize(width: 1440, height: 900)
         let visible = screen.visibleFrame
-        window.setFrame(NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height), display: true)
+        window.setFrame(
+            NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2, width: size.width, height: size.height),
+            display: true)
         window.makeKeyAndOrderFront(nil)
         backdrop.setFrame(window.frame.insetBy(dx: -60, dy: -60), display: true)
         backdrop.order(.below, relativeTo: window.windowNumber)
@@ -55,7 +57,9 @@ enum SnapshotRunner {
         await shoot("board", window)
 
         let chosen = model.mode.snapshotSelect.flatMap { number in model.board.tasks.first { $0.pullRequest?.number == number } }
-        if let task = chosen ?? model.board.tasks(in: .ready).first ?? model.board.tasks.first(where: { $0.pullRequest != nil }) ?? model.board.tasks.first {
+        if let task = chosen ?? model.board.tasks(in: .ready).first ?? model.board.tasks.first(where: { $0.pullRequest != nil })
+            ?? model.board.tasks.first
+        {
             model.select(task)
             model.inspectorOpen = true
             await shoot("board-inspector", window)
@@ -84,12 +88,14 @@ enum SnapshotRunner {
             }
             for sheet in window.sheets { window.endSheet(sheet) }
             if let pending = model.writes.pending {
-                let host = NSHostingView(rootView: ConfirmWriteSheet(pending: pending)
-                    .environment(model)
-                    .tint(Theme.accent)
-                    .background(VisualEffectBackground(material: .sheet, state: .active)))
-                let sheetWindow = NSPanel(contentRect: NSRect(origin: .zero, size: host.fittingSize),
-                                          styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+                let host = NSHostingView(
+                    rootView: ConfirmWriteSheet(pending: pending)
+                        .environment(model)
+                        .tint(Theme.accent)
+                        .background(VisualEffectBackground(material: .sheet, state: .active)))
+                let sheetWindow = NSPanel(
+                    contentRect: NSRect(origin: .zero, size: host.fittingSize),
+                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
                 sheetWindow.isReleasedWhenClosed = false
                 sheetWindow.level = .floating
                 sheetWindow.contentView = host
@@ -134,7 +140,8 @@ enum SnapshotRunner {
     /// materials come out as that flat colour, since blur can't be rendered here.
     private static func renderInProcess(_ window: NSWindow, to url: URL) {
         guard let view = window.contentView,
-              let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+            let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+        else { return }
         view.cacheDisplay(in: view.bounds, to: rep)
         let size = rep.size
         let image = NSImage(size: size, flipped: false) { rect in
@@ -152,7 +159,8 @@ enum SnapshotRunner {
     }
 
     private static func makeBackdrop() -> NSWindow {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1600, height: 1040), styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1600, height: 1040), styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.hasShadow = false
         window.contentView = NSHostingView(rootView: Backdrop())
@@ -160,7 +168,9 @@ enum SnapshotRunner {
     }
 
     private static func makePanelWindow(model: AppModel) -> NSPanel {
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 368, height: 640), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 368, height: 640), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered,
+            defer: false)
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -189,15 +199,23 @@ private struct Backdrop: View {
         MeshGradient(
             width: 3, height: 3,
             points: [[0, 0], [0.5, 0], [1, 0], [0, 0.5], [0.55, 0.45], [1, 0.5], [0, 1], [0.5, 1], [1, 1]],
-            colors: dark ? [
-                .init(red: 0.55, green: 0.30, blue: 0.16), .init(red: 0.32, green: 0.24, blue: 0.16), .init(red: 0.22, green: 0.26, blue: 0.14),
-                .init(red: 0.30, green: 0.20, blue: 0.14), .init(red: 0.14, green: 0.13, blue: 0.12), .init(red: 0.17, green: 0.20, blue: 0.13),
-                .init(red: 0.20, green: 0.15, blue: 0.12), .init(red: 0.12, green: 0.18, blue: 0.28), .init(red: 0.14, green: 0.14, blue: 0.16),
-            ] : [
-                .init(red: 0.98, green: 0.80, blue: 0.64), .init(red: 0.93, green: 0.86, blue: 0.76), .init(red: 0.82, green: 0.88, blue: 0.74),
-                .init(red: 0.95, green: 0.84, blue: 0.75), .init(red: 0.93, green: 0.91, blue: 0.88), .init(red: 0.84, green: 0.89, blue: 0.80),
-                .init(red: 0.92, green: 0.86, blue: 0.80), .init(red: 0.76, green: 0.84, blue: 0.95), .init(red: 0.88, green: 0.88, blue: 0.91),
-            ]
+            colors: dark
+                ? [
+                    .init(red: 0.55, green: 0.30, blue: 0.16), .init(red: 0.32, green: 0.24, blue: 0.16),
+                    .init(red: 0.22, green: 0.26, blue: 0.14),
+                    .init(red: 0.30, green: 0.20, blue: 0.14), .init(red: 0.14, green: 0.13, blue: 0.12),
+                    .init(red: 0.17, green: 0.20, blue: 0.13),
+                    .init(red: 0.20, green: 0.15, blue: 0.12), .init(red: 0.12, green: 0.18, blue: 0.28),
+                    .init(red: 0.14, green: 0.14, blue: 0.16),
+                ]
+                : [
+                    .init(red: 0.98, green: 0.80, blue: 0.64), .init(red: 0.93, green: 0.86, blue: 0.76),
+                    .init(red: 0.82, green: 0.88, blue: 0.74),
+                    .init(red: 0.95, green: 0.84, blue: 0.75), .init(red: 0.93, green: 0.91, blue: 0.88),
+                    .init(red: 0.84, green: 0.89, blue: 0.80),
+                    .init(red: 0.92, green: 0.86, blue: 0.80), .init(red: 0.76, green: 0.84, blue: 0.95),
+                    .init(red: 0.88, green: 0.88, blue: 0.91),
+                ]
         )
         .ignoresSafeArea()
     }

@@ -76,17 +76,19 @@ struct RawPullRequest: Decodable {
 
     func pullRequest(repo: String) -> PullRequest? {
         guard let number, let headRefName, !headRefName.isEmpty else { return nil }
-        let prState: PRState = switch state?.uppercased() {
-        case "MERGED": .merged
-        case "CLOSED": .closed
-        default: .open
-        }
-        let review: ReviewDecision = switch reviewDecision?.uppercased() {
-        case "APPROVED": .approved
-        case "CHANGES_REQUESTED": .changesRequested
-        case "REVIEW_REQUIRED": .reviewRequired
-        default: .none
-        }
+        let prState: PRState =
+            switch state?.uppercased() {
+            case "MERGED": .merged
+            case "CLOSED": .closed
+            default: .open
+            }
+        let review: ReviewDecision =
+            switch reviewDecision?.uppercased() {
+            case "APPROVED": .approved
+            case "CHANGES_REQUESTED": .changesRequested
+            case "REVIEW_REQUIRED": .reviewRequired
+            default: .none
+            }
         return PullRequest(
             repo: repo,
             number: number,
@@ -146,7 +148,7 @@ public struct RawCheck: Decodable, Sendable {
             switch state.uppercased() {
             case "SUCCESS": return .passed
             case "FAILURE", "ERROR": return .failed
-            default: return .pending // PENDING, EXPECTED
+            default: return .pending  // PENDING, EXPECTED
             }
         }
         guard status?.uppercased() == "COMPLETED" else { return .pending }
@@ -154,7 +156,7 @@ public struct RawCheck: Decodable, Sendable {
         case "SUCCESS": return .passed
         case "NEUTRAL", "SKIPPED", "STALE": return .skipped
         case nil, "": return .pending
-        default: return .failed // FAILURE, TIMED_OUT, CANCELLED, ACTION_REQUIRED, STARTUP_FAILURE
+        default: return .failed  // FAILURE, TIMED_OUT, CANCELLED, ACTION_REQUIRED, STARTUP_FAILURE
         }
     }
 }

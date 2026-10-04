@@ -35,14 +35,17 @@ struct LaneSection: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(targeted ? Theme.accent : (row.isFastLane ? Theme.accent.opacity(0.22) : .clear),
-                              style: StrokeStyle(lineWidth: targeted ? 1.5 : 0.5, dash: targeted ? [5, 4] : []))
+                .strokeBorder(
+                    targeted ? Theme.accent : (row.isFastLane ? Theme.accent.opacity(0.22) : .clear),
+                    style: StrokeStyle(lineWidth: targeted ? 1.5 : 0.5, dash: targeted ? [5, 4] : []))
         )
         .contentShape(Rectangle())
         .dropDestination(for: String.self) { ids, _ in
             withAnimation(Theme.animation(reduceMotion)) { model.drop(ids, on: row) }
             return true
-        } isTargeted: { targeted = $0 }
+        } isTargeted: {
+            targeted = $0
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(row.title), \(row.activeCount) card\(row.activeCount == 1 ? "" : "s")")
     }
@@ -86,11 +89,11 @@ struct LaneSection: View {
     @ViewBuilder
     private var icon: some View {
         switch row.kind {
-        case let .lane(lane):
+        case .lane(let lane):
             Image(systemName: lane.symbol)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(lane == .fast ? AnyShapeStyle(Theme.accent) : AnyShapeStyle(.secondary))
-        case let .tag(tag):
+        case .tag(let tag):
             Circle().fill(tag.color.color).frame(width: 8, height: 8)
         case .untagged:
             Circle().strokeBorder(Color.secondary, lineWidth: 1).frame(width: 8, height: 8)
@@ -132,11 +135,12 @@ struct LaneSection: View {
     }
 
     private var emptyHint: some View {
-        let text: String = switch row.kind {
-        case .lane(.fast): "Drag urgent cards here, or press ⌃1 on a selected card."
-        case .lane(.later): "Drag cards here to park them, or press ⌃3."
-        default: "Nothing here. Drag cards in to move them."
-        }
+        let text: String =
+            switch row.kind {
+            case .lane(.fast): "Drag urgent cards here, or press ⌃1 on a selected card."
+            case .lane(.later): "Drag cards here to park them, or press ⌃3."
+            default: "Nothing here. Drag cards in to move them."
+            }
         return Text(text)
             .font(.callout)
             .foregroundStyle(.tertiary)

@@ -110,10 +110,11 @@ public enum ClaudeTranscript {
     /// Folder name Claude uses under `~/.claude/projects` for a working directory:
     /// every character other than ASCII letters and digits becomes `-`.
     public static func encodeProjectDirectory(_ cwd: String) -> String {
-        String(cwd.unicodeScalars.map { scalar -> Character in
-            let v = scalar.value
-            let isAlnum = (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122)
-            return isAlnum ? Character(scalar) : "-"
-        })
+        String(
+            cwd.unicodeScalars.map { scalar -> Character in
+                let v = scalar.value
+                let isAlnum = (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122)
+                return isAlnum ? Character(scalar) : "-"
+            })
     }
 }

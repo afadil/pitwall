@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("Claude reader")
@@ -9,13 +10,18 @@ struct ClaudeReaderTests {
     }
 
     private func user(_ content: Any, branch: String? = "feat/x", sidechain: Bool = false, meta: Bool = false) -> Data {
-        var o: [String: Any] = ["type": "user", "isSidechain": sidechain, "message": ["role": "user", "content": content], "timestamp": "2026-10-04T10:00:00.000Z"]
+        var o: [String: Any] = [
+            "type": "user", "isSidechain": sidechain, "message": ["role": "user", "content": content],
+            "timestamp": "2026-10-04T10:00:00.000Z",
+        ]
         if let branch { o["gitBranch"] = branch }
         if meta { o["isMeta"] = true }
         return line(o)
     }
 
-    private func assistant(stop: String?, branch: String? = "feat/x", sidechain: Bool = false, at time: String = "2026-10-04T10:00:05.000Z") -> Data {
+    private func assistant(
+        stop: String?, branch: String? = "feat/x", sidechain: Bool = false, at time: String = "2026-10-04T10:00:05.000Z"
+    ) -> Data {
         var message: [String: Any] = ["role": "assistant", "content": [["type": "text", "text": "ok"]]]
         if let stop { message["stop_reason"] = stop }
         var o: [String: Any] = ["type": "assistant", "isSidechain": sidechain, "message": message, "timestamp": time]
@@ -23,8 +29,11 @@ struct ClaudeReaderTests {
         return line(o)
     }
 
-    private let stopHook = #"{"type":"system","subtype":"stop_hook_summary","stopReason":"","isSidechain":false,"timestamp":"2026-10-04T10:00:06.000Z","gitBranch":"feat/x"}"#
-    private let bookkeeping = [#"{"type":"last-prompt","lastPrompt":"x"}"#, #"{"type":"custom-title","customTitle":"x"}"#, #"{"type":"cost-state"}"#]
+    private let stopHook =
+        #"{"type":"system","subtype":"stop_hook_summary","stopReason":"","isSidechain":false,"timestamp":"2026-10-04T10:00:06.000Z","gitBranch":"feat/x"}"#
+    private let bookkeeping = [
+        #"{"type":"last-prompt","lastPrompt":"x"}"#, #"{"type":"custom-title","customTitle":"x"}"#, #"{"type":"cost-state"}"#,
+    ]
 
     // MARK: Turn state rules
 
@@ -53,7 +62,10 @@ struct ClaudeReaderTests {
     }
 
     @Test func sidechainAndMetaLinesAreIgnored() {
-        let lines = [user("go"), assistant(stop: "tool_use"), assistant(stop: "end_turn", sidechain: true), user("<local-command-caveat>", meta: true)]
+        let lines = [
+            user("go"), assistant(stop: "tool_use"), assistant(stop: "end_turn", sidechain: true),
+            user("<local-command-caveat>", meta: true),
+        ]
         #expect(ClaudeTranscript.summarize(lines: lines).turn == .running)
     }
 
@@ -69,7 +81,10 @@ struct ClaudeReaderTests {
     // MARK: Branch
 
     @Test func branchComesFromTheMostRecentLineThatHasOne() {
-        let lines = [user("a", branch: "claude/calm-heron"), assistant(stop: "tool_use", branch: "feat/renamed"), Data(#"{"type":"mode","mode":"default"}"#.utf8)]
+        let lines = [
+            user("a", branch: "claude/calm-heron"), assistant(stop: "tool_use", branch: "feat/renamed"),
+            Data(#"{"type":"mode","mode":"default"}"#.utf8),
+        ]
         #expect(ClaudeTranscript.summarize(lines: lines).branch == "feat/renamed")
     }
 
@@ -87,8 +102,9 @@ struct ClaudeReaderTests {
 
     @Test func encodesProjectFolderNames() {
         #expect(ClaudeTranscript.encodeProjectDirectory("/Users/dev/work/orbit") == "-Users-dev-work-orbit")
-        #expect(ClaudeTranscript.encodeProjectDirectory("/Users/dev/work/orbit/.claude/worktrees/calm-heron")
-            == "-Users-dev-work-orbit--claude-worktrees-calm-heron")
+        #expect(
+            ClaudeTranscript.encodeProjectDirectory("/Users/dev/work/orbit/.claude/worktrees/calm-heron")
+                == "-Users-dev-work-orbit--claude-worktrees-calm-heron")
         #expect(ClaudeTranscript.encodeProjectDirectory("/tmp/my project_1") == "-tmp-my-project-1")
     }
 
@@ -107,31 +123,36 @@ struct ClaudeReaderTests {
         let sync = try #require(byTitle["Add offline sync queue"])
         #expect(sync.sessionID == "local_11111111-aaaa-4aaa-8aaa-000000000001")
         #expect(sync.resumeID == "c0000001-0000-4000-8000-000000000001")
-        #expect(sync.branch == "feat/offline-sync") // transcript beats metadata "claude/calm-heron"
+        #expect(sync.branch == "feat/offline-sync")  // transcript beats metadata "claude/calm-heron"
         #expect(sync.turn == .ended)
         #expect(sync.isArchived == false)
         #expect(sync.createdAt == Date(timeIntervalSince1970: 1_791_122_400))
-        #expect(sync.lastActivity == Date(timeIntervalSince1970: 1_791_125_000)) // metadata is newer than the tail
+        #expect(sync.lastActivity == Date(timeIntervalSince1970: 1_791_125_000))  // metadata is newer than the tail
         #expect(sync.problem == nil)
-        #expect(sync.resumeCommand == "cd /Users/dev/work/orbit/.claude/worktrees/calm-heron && claude --resume c0000001-0000-4000-8000-000000000001")
+        #expect(
+            sync.resumeCommand
+                == "cd /Users/dev/work/orbit/.claude/worktrees/calm-heron && claude --resume c0000001-0000-4000-8000-000000000001")
         #expect(!sync.activity.isEmpty)
 
         let flaky = try #require(byTitle["Investigate flaky upload test"])
         #expect(flaky.branch == "main")
         // Dismissed and non-GitHub PR links are dropped.
-        #expect(flaky.linkedPullRequests == [LinkedPullRequest(repo: RepoID(host: "github.com", owner: "acme", name: "orbit"), branch: "fix/flaky-upload", number: 40)])
-        #expect(flaky.turn == .running) // the sidechain end_turn is ignored
+        #expect(
+            flaky.linkedPullRequests == [
+                LinkedPullRequest(repo: RepoID(host: "github.com", owner: "acme", name: "orbit"), branch: "fix/flaky-upload", number: 40)
+            ])
+        #expect(flaky.turn == .running)  // the sidechain end_turn is ignored
         #expect(flaky.lastWrite != nil)
 
         let notes = try #require(byTitle["Draft release notes"])
         #expect(notes.problem == "Can't find transcript")
-        #expect(notes.branch == "claude/brave-otter") // metadata fallback
+        #expect(notes.branch == "claude/brave-otter")  // metadata fallback
         #expect(notes.turn == .unknown)
 
         let archived = try #require(byTitle["Fix date parsing"])
         #expect(archived.isArchived)
-        #expect(archived.branch == "fix/date-parsing") // found via the transcript index
-        #expect(archived.turn == .ended) // interrupted by user
+        #expect(archived.branch == "fix/date-parsing")  // found via the transcript index
+        #expect(archived.turn == .ended)  // interrupted by user
 
         let statuses = Dictionary(uniqueKeysWithValues: result.statuses.map { ($0.kind, $0) })
         #expect(statuses[.claudeSessions]?.health == .warning)
@@ -140,7 +161,8 @@ struct ClaudeReaderTests {
     }
 
     @Test func missingAppFolderIsReportedNotThrown() {
-        let reader = ClaudeReader(sessionsRoot: URL(filePath: "/nonexistent/claude/sessions"), projectsRoot: URL(filePath: "/nonexistent/claude/projects"))
+        let reader = ClaudeReader(
+            sessionsRoot: URL(filePath: "/nonexistent/claude/sessions"), projectsRoot: URL(filePath: "/nonexistent/claude/projects"))
         let result = reader.read(now: testNow)
         #expect(result.items.isEmpty)
         #expect(result.statuses.first?.health == .missing)
@@ -152,7 +174,10 @@ struct ClaudeReaderTests {
         // Inflate the transcript to ~6 MB by prepending filler before the real lines.
         let path = "claude/projects/-Users-dev-work-orbit--claude-worktrees-calm-heron/c0000001-0000-4000-8000-000000000001.jsonl"
         let original = try String(contentsOf: home.url.appending(path: path), encoding: .utf8)
-        let filler = String(repeating: "{\"type\":\"user\",\"message\":{\"content\":\"\(String(repeating: "z", count: 400))\"},\"timestamp\":\"2026-10-01T00:00:00.000Z\",\"gitBranch\":\"old/branch\"}\n", count: 14_000)
+        let filler = String(
+            repeating:
+                "{\"type\":\"user\",\"message\":{\"content\":\"\(String(repeating: "z", count: 400))\"},\"timestamp\":\"2026-10-01T00:00:00.000Z\",\"gitBranch\":\"old/branch\"}\n",
+            count: 14_000)
         try home.write(filler + original, to: path)
         // Make the session look old so only the state window (256 KB) is read.
         try home.setModified(path, to: date("2026-10-04T14:43:02Z"))
@@ -195,9 +220,10 @@ struct AppLinkTests {
         let newer = AgentSession.make(.codex, id: "new", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-60))
         var linkedOnly = AgentSession.make(.claude, id: "linked", branch: "main", lastActivity: testNow)
         linkedOnly.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "feat/x", number: 1)]
-        let board = BoardBuilder.build(sessions: [older, newer, linkedOnly], repos: [older.id: orbit, newer.id: orbit, linkedOnly.id: orbit],
-                                       pullRequests: ["acme/orbit": [.make(1, branch: "feat/x")]], settings: BoardSettings(), now: testNow)
+        let board = BoardBuilder.build(
+            sessions: [older, newer, linkedOnly], repos: [older.id: orbit, newer.id: orbit, linkedOnly.id: orbit],
+            pullRequests: ["acme/orbit": [.make(1, branch: "feat/x")]], settings: BoardSettings(), now: testNow)
         let task = board.tasks.first { $0.branch == "feat/x" }
-        #expect(task?.sessionToOpen?.id == newer.id) // not the linked session, even though it's newer
+        #expect(task?.sessionToOpen?.id == newer.id)  // not the linked session, even though it's newer
     }
 }

@@ -13,7 +13,9 @@ public final class FileWatcher: @unchecked Sendable {
     /// - Parameters:
     ///   - paths: folders to watch (missing ones are skipped).
     ///   - filter: returns true for changed paths that should trigger a refresh.
-    public init(paths: [URL], latency: TimeInterval = 1.0, filter: @escaping @Sendable (String) -> Bool, onChange: @escaping @Sendable () -> Void) {
+    public init(
+        paths: [URL], latency: TimeInterval = 1.0, filter: @escaping @Sendable (String) -> Bool, onChange: @escaping @Sendable () -> Void
+    ) {
         self.filter = filter
         self.onChange = onChange
         let existing = paths.map(\.path).filter { FileManager.default.fileExists(atPath: $0) }
@@ -33,8 +35,9 @@ public final class FileWatcher: @unchecked Sendable {
             }
         }
         let flags = UInt32(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer)
-        stream = FSEventStreamCreate(nil, callback, &context, existing as CFArray,
-                                     FSEventStreamEventId(kFSEventStreamEventIdSinceNow), latency, flags)
+        stream = FSEventStreamCreate(
+            nil, callback, &context, existing as CFArray,
+            FSEventStreamEventId(kFSEventStreamEventIdSinceNow), latency, flags)
         if let stream {
             FSEventStreamSetDispatchQueue(stream, queue)
             FSEventStreamStart(stream)

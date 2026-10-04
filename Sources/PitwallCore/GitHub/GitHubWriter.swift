@@ -35,7 +35,7 @@ public struct PendingWrite: Sendable, Hashable, Identifiable {
         switch action {
         case .markReady:
             return ["pr", "ready", String(pr.number), "--repo", pr.repo]
-        case let .merge(method):
+        case .merge(let method):
             var args = ["pr", "merge", String(pr.number), "--repo", pr.repo, method.flag]
             // Refuse to merge if new commits were pushed after the user looked.
             if let sha = pr.headRefOid { args += ["--match-head-commit", sha] }
@@ -52,8 +52,8 @@ public enum WriteError: Error, Sendable, Equatable, CustomStringConvertible {
     public var description: String {
         switch self {
         case .notConfirmed: "The action wasn't confirmed."
-        case let .notApplicable(reason): reason
-        case let .gh(error): error.description
+        case .notApplicable(let reason): reason
+        case .gh(let error): error.description
         }
     }
 }

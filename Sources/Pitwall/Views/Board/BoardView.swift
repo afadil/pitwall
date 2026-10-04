@@ -99,22 +99,31 @@ struct BoardView: View {
                     LazyVStack(alignment: .leading, spacing: 10, pinnedViews: [.sectionHeaders]) {
                         Section {
                             ForEach(rows) { row in
-                                LaneSection(row: row, columns: activeColumns, columnWidth: columnWidth, spacing: spacing,
-                                            collapsed: collapsedBinding(row))
+                                LaneSection(
+                                    row: row, columns: activeColumns, columnWidth: columnWidth, spacing: spacing,
+                                    collapsed: collapsedBinding(row))
                             }
                         } header: {
-                            ColumnHeaderRow(columns: activeColumns, counts: counts, width: columnWidth, spacing: spacing,
-                                            highlighted: model.highlightedColumn)
-                                .padding(.vertical, 6)
-                                // Blurs the cards scrolling underneath, like a native list header.
-                                .background(VisualEffectBackground(material: .headerView, blending: .withinWindow, state: .active))
+                            ColumnHeaderRow(
+                                columns: activeColumns, counts: counts, width: columnWidth, spacing: spacing,
+                                highlighted: model.highlightedColumn
+                            )
+                            .padding(.vertical, 6)
+                            // Blurs the cards scrolling underneath, like a native list header.
+                            .background(VisualEffectBackground(material: .headerView, blending: .withinWindow, state: .active))
                         }
                     }
                     .frame(width: columnWidth * 4 + spacing * 3 + 20)
-                    DoneColumnView(tasks: board.tasks(in: .done), collapsed: Binding(
-                        get: { foldDone },
-                        set: { doneCollapsed = $0; if !$0 { model.inspectorOpen = false } }
-                    ))
+                    DoneColumnView(
+                        tasks: board.tasks(in: .done),
+                        collapsed: Binding(
+                            get: { foldDone },
+                            set: {
+                                doneCollapsed = $0
+                                if !$0 { model.inspectorOpen = false }
+                            }
+                        )
+                    )
                     .frame(width: doneWidth)
                     .padding(.top, 6)
                 }

@@ -17,8 +17,8 @@ public enum GHError: Error, Sendable, Hashable, CustomStringConvertible {
         case .notInstalled: "gh not found. Install it with `brew install gh`."
         case .notSignedIn: "gh is signed out. Run `gh auth login` in Terminal."
         case .timedOut: "gh timed out"
-        case let .failed(_, message): message.isEmpty ? "gh failed" : message
-        case let .unreadableOutput(reason): "Can't read gh output: \(reason)"
+        case .failed(_, let message): message.isEmpty ? "gh failed" : message
+        case .unreadableOutput(let reason): "Can't read gh output: \(reason)"
         }
     }
 }

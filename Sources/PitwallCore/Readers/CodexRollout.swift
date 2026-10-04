@@ -28,7 +28,8 @@ public enum CodexRollout {
                 if let since = activitySince, date >= since { summary.activityTimestamps.append(date) }
             }
             if !turnDecided, object.string("type") == "event_msg",
-               let type = object.dictionary("payload")?.string("type") {
+                let type = object.dictionary("payload")?.string("type")
+            {
                 switch type {
                 case "task_started":
                     summary.turn = .running

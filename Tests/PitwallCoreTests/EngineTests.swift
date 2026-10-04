@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import PitwallCore
 
 @Suite("End to end on fixtures", .serialized)
@@ -9,8 +10,11 @@ struct EngineTests {
         let home = try FixtureHome()
         try home.installClaude()
         try home.installCodex()
-        try home.setModified("claude/projects/-Users-dev-work-orbit/c0000002-0000-4000-8000-000000000002.jsonl", to: date("2026-10-04T15:15:00Z"))
-        try home.setModified("codex/sessions/2026/10/04/rollout-2026-10-04T15-00-00-019a0002-0000-7000-8000-000000000002.jsonl", to: date("2026-10-04T15:16:40Z"))
+        try home.setModified(
+            "claude/projects/-Users-dev-work-orbit/c0000002-0000-4000-8000-000000000002.jsonl", to: date("2026-10-04T15:15:00Z"))
+        try home.setModified(
+            "codex/sessions/2026/10/04/rollout-2026-10-04T15-00-00-019a0002-0000-7000-8000-000000000002.jsonl",
+            to: date("2026-10-04T15:16:40Z"))
 
         let orbitRemotes = FakeGit.Repo(remotes: ["origin": "https://github.com/acme/orbit.git"])
         let lumenRemotes = FakeGit.Repo(remotes: ["origin": "git@github.com:acme/lumen.git"])
@@ -37,8 +41,9 @@ struct EngineTests {
         let github = await engine.fetchGitHub(slugs: slugs, now: testNow)
         #expect(github.errors.isEmpty)
 
-        let board = BoardBuilder.build(sessions: local.sessions, repos: local.repos, pullRequests: github.pullRequests,
-                                       settings: BoardSettings(), now: testNow)
+        let board = BoardBuilder.build(
+            sessions: local.sessions, repos: local.repos, pullRequests: github.pullRequests,
+            settings: BoardSettings(), now: testNow)
         let columns = Dictionary(grouping: board.tasks, by: \.column).mapValues { $0.map(\.title) }
 
         #expect(columns[.working] == ["Add offline sync tests", "Investigate flaky upload test"])
@@ -94,7 +99,8 @@ struct EngineTests {
         let (home, engine, _) = try makeEngine()
         defer { withExtendedLifetime(home) {} }
         let local = await engine.readLocal(now: testNow, calendar: utcCalendar)
-        let board = BoardBuilder.build(sessions: local.sessions, repos: local.repos, pullRequests: [:], settings: BoardSettings(), now: testNow)
+        let board = BoardBuilder.build(
+            sessions: local.sessions, repos: local.repos, pullRequests: [:], settings: BoardSettings(), now: testNow)
         #expect(board.tasks.count == 6)
         #expect(board.count(.working) == 2)
         #expect(board.count(.waiting) == 4)

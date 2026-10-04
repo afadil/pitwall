@@ -24,13 +24,13 @@ public struct GitHubClient: Sendable {
         async let open = list(slug, state: "open", limit: 200)
         let results = await (recent, open)
         switch results {
-        case let (.success(recent), .success(open)):
+        case (.success(let recent), .success(let open)):
             var byNumber = Dictionary(recent.map { ($0.number, $0) }, uniquingKeysWith: { a, _ in a })
             for pr in open { byNumber[pr.number] = pr }
             return byNumber.values.sorted { $0.number > $1.number }
-        case let (.success(prs), .failure), let (.failure, .success(prs)):
+        case (.success(let prs), .failure), (.failure, .success(let prs)):
             return prs
-        case let (.failure(error), .failure):
+        case (.failure(let error), .failure):
             throw error
         }
     }

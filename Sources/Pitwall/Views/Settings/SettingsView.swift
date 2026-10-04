@@ -81,7 +81,11 @@ struct SettingsView: View {
     // MARK: Tags
 
     private var tagsSection: some View {
-        SettingsGroup(title: "Tags", footer: "Tags are yours: add as many as you like to any card, then filter or group the board by them. GitHub labels show up on their own.") {
+        SettingsGroup(
+            title: "Tags",
+            footer:
+                "Tags are yours: add as many as you like to any card, then filter or group the board by them. GitHub labels show up on their own."
+        ) {
             ForEach(Array(model.organization.tags.enumerated()), id: \.element.id) { index, tag in
                 if index > 0 { SettingsDivider() }
                 TagSettingsRow(tag: tag)
@@ -92,7 +96,8 @@ struct SettingsView: View {
     }
 
     private var organizationSection: some View {
-        SettingsGroup(title: "Your organization", footer: "Lanes, tags and hidden cards. Pitwall writes only this file, in its own folder.") {
+        SettingsGroup(title: "Your organization", footer: "Lanes, tags and hidden cards. Pitwall writes only this file, in its own folder.")
+        {
             HStack(alignment: .top, spacing: 12) {
                 HealthIcon(health: model.organizationProblem == nil ? .ok : .warning)
                     .font(.body)
@@ -150,7 +155,9 @@ struct SettingsView: View {
     // MARK: Data sources
 
     private var sourcesSection: some View {
-        SettingsGroup(title: "Data sources", footer: "Read-only. Pitwall never writes to these folders and only reads the end of each transcript.") {
+        SettingsGroup(
+            title: "Data sources", footer: "Read-only. Pitwall never writes to these folders and only reads the end of each transcript."
+        ) {
             ForEach(Array(model.statuses.enumerated()), id: \.element.id) { index, status in
                 if index > 0 { SettingsDivider() }
                 SourceRow(status: status)
@@ -162,10 +169,12 @@ struct SettingsView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "lock.shield")
                 .foregroundStyle(.secondary)
-            Text("Pitwall talks to the network only through the gh CLI, using your existing login. No tokens are read or stored, and nothing is sent anywhere else.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            Text(
+                "Pitwall talks to the network only through the gh CLI, using your existing login. No tokens are read or stored, and nothing is sent anywhere else."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 4)
     }

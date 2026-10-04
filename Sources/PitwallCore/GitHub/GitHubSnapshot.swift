@@ -29,10 +29,12 @@ public struct GitHubSnapshot: Sendable {
         if !errors.isEmpty {
             let failed = errors.keys.sorted().joined(separator: ", ")
             let first = errors.values.first.map { " (\($0.description))" } ?? ""
-            return SourceStatus(kind: .github, path: path, health: errors.count >= repoCount ? .error : .warning,
-                                detail: "Can't read pull requests for \(failed)\(first)")
+            return SourceStatus(
+                kind: .github, path: path, health: errors.count >= repoCount ? .error : .warning,
+                detail: "Can't read pull requests for \(failed)\(first)")
         }
-        return SourceStatus(kind: .github, path: path, health: .ok,
-                            detail: "Signed in · \(repoCount) repositor\(repoCount == 1 ? "y" : "ies")")
+        return SourceStatus(
+            kind: .github, path: path, health: .ok,
+            detail: "Signed in · \(repoCount) repositor\(repoCount == 1 ? "y" : "ies")")
     }
 }
