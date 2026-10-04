@@ -80,15 +80,30 @@ struct GHParsingTests {
             == .failed(exitCode: 1, message: "GraphQL: Could not resolve to a Repository"))
     }
 
-    @Test func listUsesOneReadOnlyCallPerRepo() async throws {
+    @Test func listReadsRecentAndOpenPullRequests() async throws {
         let gh = FakeGH()
-        try gh.respond(to: ["pr", "list"], json: "github/pr-list-acme-orbit.json")
+        try gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "all"], json: "github/pr-list-acme-orbit.json")
+        // An old open PR that is not among the newest 100.
+        gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"], with: ProcessResult(exitCode: 0, stdout: Data("""
+        [{"number": 7, "title": "Old but open", "headRefName": "feat/ancient", "state": "OPEN", "isDraft": false,
+          "reviewDecision": "", "statusCheckRollup": [], "isCrossRepository": false, "headRepositoryOwner": {"login": "acme"}}]
+        """.utf8)))
         let prs = try await GitHubClient(runner: gh).pullRequests(repo: "acme/orbit")
-        #expect(prs.count == 11)
-        #expect(gh.recorded == [[
-            "pr", "list", "--repo", "acme/orbit", "--state", "all", "--limit", "100", "--json",
-            "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner",
-        ]])
+        #expect(prs.count == 12)
+        #expect(prs.contains { $0.number == 7 && $0.headRefName == "feat/ancient" })
+        let fields = "number,title,url,headRefName,headRefOid,baseRefName,state,isDraft,reviewDecision,statusCheckRollup,mergedAt,closedAt,updatedAt,isCrossRepository,headRepositoryOwner"
+        #expect(Set(gh.recorded.map { $0.joined(separator: " ") }) == [
+            "pr list --repo acme/orbit --state all --limit 100 --search sort:updated-desc --json \(fields)",
+            "pr list --repo acme/orbit --state open --limit 200 --json \(fields)",
+        ])
+        #expect(gh.writeCalls.isEmpty)
+    }
+
+    @Test func oneFailedListStillReturnsTheOther() async throws {
+        let gh = FakeGH()
+        try gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "all"], json: "github/pr-list-acme-orbit.json")
+        gh.respond(to: ["pr", "list", "--repo", "acme/orbit", "--state", "open"], with: ProcessResult(exitCode: 1, stderr: Data("HTTP 502".utf8)))
+        #expect(try await GitHubClient(runner: gh).pullRequests(repo: "acme/orbit").count == 11)
     }
 
     @Test func signedOutGHIsReported() async {
