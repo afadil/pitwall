@@ -61,6 +61,7 @@ public enum DemoData {
         add(.codex, "x05", "Round CSV export totals", lumen, "codex/csv-rounding", ago: 130, activity: [(10.4, 10.9)])
         add(.claude, "c06", "Retry failed webhook deliveries", atlas, "feat/webhook-retry", ago: 220)
         add(.codex, "x06", "Retry policy tests", atlas, "feat/webhook-retry", ago: 260)
+        add(.codex, "x09", "Sign webhook payloads", atlas, "feat/webhook-signing", ago: 240)
         add(.claude, "c07", "Search suggestions", orbit, "feat/search", ago: 300)
 
         // Ready to merge
@@ -72,14 +73,14 @@ public enum DemoData {
         add(.codex, "x08", "Accessibility labels for charts", lumen, "codex/a11y-labels", ago: 60 * 70)
         add(.claude, "c10", "Remove legacy v1 endpoint", atlas, "feat/drop-v1", ago: 60 * 120)
 
-        func pr(_ repo: ResolvedRepo, _ number: Int, _ title: String, _ branch: String, state: PRState = .open,
+        func pr(_ repo: ResolvedRepo, _ number: Int, _ title: String, _ branch: String, base: String = "main", state: PRState = .open,
                 draft: Bool = false, review: ReviewDecision = .none, checks: CheckSummary = CheckSummary(passed: 6, skipped: 1),
                 ago: Double) -> PullRequest {
             let when = minutes(ago)
             let slug = repo.id.githubSlug ?? ""
             return PullRequest(
                 repo: slug, number: number, title: title, url: URL(string: "https://github.com/\(slug)/pull/\(number)"),
-                headRefName: branch, headRefOid: String(repeating: "d", count: 40), baseRefName: "main",
+                headRefName: branch, headRefOid: String(repeating: "d", count: 40), baseRefName: base,
                 state: state, isDraft: draft, reviewDecision: review, checks: checks,
                 mergedAt: state == .merged ? when : nil, closedAt: state == .open ? nil : when, updatedAt: when,
                 isCrossRepository: false, headOwner: repo.id.owner
@@ -100,6 +101,7 @@ public enum DemoData {
             ],
             "acme/atlas-api": [
                 pr(atlas, 231, "feat(webhooks): retry with backoff", "feat/webhook-retry", review: .changesRequested, ago: 200),
+                pr(atlas, 233, "feat(webhooks): sign payloads", "feat/webhook-signing", base: "feat/webhook-retry", review: .approved, ago: 230),
                 pr(atlas, 229, "chore(deps): October bumps", "chore/deps-oct", ago: 380),
                 pr(atlas, 224, "Remove v1 endpoint", "feat/drop-v1", state: .closed, ago: 60 * 118),
             ],

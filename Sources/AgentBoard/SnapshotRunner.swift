@@ -54,7 +54,8 @@ enum SnapshotRunner {
         model.screen = .board
         await shoot("board", window)
 
-        if let task = model.board.tasks(in: .ready).first ?? model.board.tasks.first(where: { $0.pullRequest != nil }) ?? model.board.tasks.first {
+        let chosen = model.mode.snapshotSelect.flatMap { number in model.board.tasks.first { $0.pullRequest?.number == number } }
+        if let task = chosen ?? model.board.tasks(in: .ready).first ?? model.board.tasks.first(where: { $0.pullRequest != nil }) ?? model.board.tasks.first {
             model.select(task)
             model.inspectorOpen = true
             await shoot("board-inspector", window)

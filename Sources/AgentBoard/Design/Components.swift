@@ -101,12 +101,14 @@ struct StatusLabel: View {
 /// Tinted pill used for the "In review" reason.
 struct ReasonPill: View {
     let reason: ReviewReason
+    /// Overrides the label, e.g. "Stacked on #41".
+    var text: String?
 
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: reason.symbol)
                 .font(.caption2.weight(.bold))
-            Text(reason.label)
+            Text(text ?? reason.label)
                 .font(.caption.weight(.medium))
         }
         .foregroundStyle(reason.color == .secondary ? AnyShapeStyle(.secondary) : AnyShapeStyle(reason.color))

@@ -96,6 +96,11 @@ for column in BoardColumn.allCases {
             line += " · #\(pr.number) \(pr.state.rawValue) ci:\(pr.checks.state.rawValue) review:\(pr.reviewDecision.rawValue)"
         }
         if let reason = t.reviewReason { line += " [\(reason.label)]" }
+        if let stack = t.stack {
+            line += " stack \(stack.members.map { "#\($0)" }.joined(separator: "←"))"
+            if let via = stack.workingVia { line += " (working via #\(via))" }
+            if let base = stack.base { line += " (on #\(base))" }
+        }
         if t.apps.count > 1 { line += " {Claude+Codex}" }
         print(line)
     }

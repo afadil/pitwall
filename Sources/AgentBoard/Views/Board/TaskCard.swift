@@ -77,6 +77,13 @@ struct TaskCard: View {
             if task.column == .working {
                 PulseDot(size: 5).frame(width: 12, height: 12)
             }
+            if let via = task.stack?.workingVia {
+                // Working because a session is on another PR of the same stack.
+                Text(verbatim: "via #\(via) ·")
+                    .font(Theme.monoSmall)
+                    .foregroundStyle(Theme.accentText)
+                    .help(Text(verbatim: "A session is working on #\(via) in the same stack"))
+            }
             Text(Format.ago(task.lastActivity ?? task.pullRequest?.updatedAt, now: model.now))
                 .font(Theme.monoSmall)
                 .foregroundStyle(task.column == .working ? AnyShapeStyle(Theme.accentText) : AnyShapeStyle(.tertiary))
@@ -120,7 +127,7 @@ struct TaskCard: View {
         HStack(spacing: 10) {
             PRChip(pr: pr).fixedSize()
             if let reason = task.reviewReason {
-                ReasonPill(reason: reason).fixedSize()
+                ReasonPill(reason: reason, text: Self.reasonText(task)).fixedSize()
             } else if pr.state == .open {
                 StatusLabel(symbol: pr.checks.state.symbol, text: pr.checks.state.label, color: pr.checks.state.color).fixedSize()
             }
@@ -135,7 +142,7 @@ struct TaskCard: View {
     private func secondarySignal(_ pr: PullRequest) -> some View {
         if pr.state == .open {
             switch task.reviewReason {
-            case .draft?, .changesRequested?, .awaitingReview?:
+            case .draft?, .changesRequested?, .awaitingReview?, .stacked?:
                 if pr.checks.state != .none {
                     signalIcon(pr.checks.state.symbol, pr.checks.state.color, pr.checks.state.label)
                 }
@@ -155,6 +162,12 @@ struct TaskCard: View {
             .accessibilityLabel(label)
     }
 
+    /// Pill text: "Stacked on #41" names the PR this one waits for.
+    static func reasonText(_ task: BoardTask) -> String? {
+        guard task.reviewReason == .stacked, let base = task.stack?.base else { return nil }
+        return "Stacked on #\(base)"
+    }
+
     static func accessibilityDescription(_ task: BoardTask, now: Date) -> String {
         var parts = [task.title]
         if let repo = task.repo { parts.append(repo.displayName) }
@@ -164,7 +177,8 @@ struct TaskCard: View {
         if let activity = task.lastActivity { parts.append("active \(Format.spokenAgo(activity, now: now))") }
         if let pr = task.pullRequest {
             parts.append("pull request \(pr.number), \(pr.stateLabel)")
-            if let reason = task.reviewReason { parts.append(reason.label) }
+            if let reason = task.reviewReason { parts.append(reasonText(task) ?? reason.label) }
+            if let via = task.stack?.workingVia { parts.append("working through pull request \(via) in the same stack") }
             if pr.state == .open { parts.append(pr.checks.state.label) }
             if let review = pr.reviewDecision.label { parts.append(review) }
         }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Launches the built app in snapshot mode and captures each of its windows.
-#   Scripts/snapshots.sh <output-dir> [--demo] [--appearance dark|light] [--prefix name]
+#   Scripts/snapshots.sh <output-dir> [--demo] [--appearance dark|light] [--prefix name] [--select <PR number>]
 # Only the app's own windows are captured (by window id, or by the window's exact
 # frame while the app is frontmost), over a synthetic backdrop the app draws itself. Needs Screen Recording permission for
 # the terminal running this script; without it the app renders views in-process.
@@ -17,6 +17,7 @@ while [ $# -gt 0 ]; do
     --demo) ARGS+=(--demo) ;;
     --appearance) ARGS+=(--appearance "$2"); shift ;;
     --prefix) PREFIX="$2"; shift ;;
+    --select) ARGS+=(--snapshot-select "$2"); shift ;;
   esac
   shift
 done

@@ -13,6 +13,9 @@ struct TaskInspector: View {
                 if let pr = task.pullRequest {
                     pullRequestSection(pr)
                 }
+                if let stack = task.stack, let pr = task.pullRequest {
+                    stackSection(stack, current: pr.number)
+                }
                 sessionsSection
                 if let directory = task.directory {
                     folderSection(directory)
@@ -155,6 +158,59 @@ struct TaskInspector: View {
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// The stack bottom first, with this PR highlighted and the one being worked on marked.
+    private func stackSection(_ stack: StackInfo, current: Int) -> some View {
+        let working = stack.workingVia ?? (task.column == .working ? current : nil)
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionHeader("Stack · \(stack.members.count)")
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(stack.members.enumerated()), id: \.element) { index, number in
+                    let peer = model.board.tasks.first { $0.pullRequest?.number == number && $0.pullRequest?.repo == task.pullRequest?.repo }
+                    HStack(spacing: 8) {
+                        Image(systemName: index == 0 ? "circle.fill" : "arrow.turn.left.up")
+                            .font(.system(size: index == 0 ? 5 : 9, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                            .frame(width: 14)
+                        Text(verbatim: "#\(number)")
+                            .font(Theme.monoMedium)
+                            .foregroundStyle(number == current ? AnyShapeStyle(Theme.accentText) : AnyShapeStyle(.secondary))
+                        Text(peer?.pullRequest?.title ?? (number == current ? task.title : "Not on the board"))
+                            .font(.caption)
+                            .lineLimit(1)
+                            .foregroundStyle(number == current ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                        Spacer(minLength: 4)
+                        if number == working {
+                            PulseDot(size: 5).frame(width: 12, height: 12)
+                                .help("A session is working on this one")
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(number == current ? Theme.accent.opacity(0.08) : .clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { if let peer { model.select(peer) } }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(number == current ? [.isSelected] : [])
+                }
+            }
+            .surface()
+            Text(stackNote(stack))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func stackNote(_ stack: StackInfo) -> String {
+        if let via = stack.workingVia {
+            return "A session is working on #\(via) in this stack, so the stack counts as in progress."
+        }
+        if let base = stack.base {
+            return "Targets #\(base)'s branch, so it lands after #\(base)."
+        }
+        return "Bottom of the stack: targets the default branch."
     }
 
     private var sessionsSection: some View {

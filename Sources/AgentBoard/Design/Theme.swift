@@ -161,7 +161,7 @@ extension PullRequest {
 extension ReviewReason {
     var color: Color {
         switch self {
-        case .draft, .awaitingReview: .secondary
+        case .draft, .awaitingReview, .stacked: .secondary
         case .ciFailing, .changesRequested: Theme.failure
         case .ciRunning: Theme.pending
         }
@@ -174,6 +174,7 @@ extension ReviewReason {
         case .changesRequested: "exclamationmark.bubble.fill"
         case .ciRunning: "circle.dotted.circle"
         case .awaitingReview: "eye"
+        case .stacked: "square.stack.3d.up"
         }
     }
 }

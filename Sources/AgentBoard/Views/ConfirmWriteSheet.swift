@@ -23,7 +23,7 @@ struct ConfirmWriteSheet: View {
                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.accent))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(isMerge ? "Merge pull request #\(pr.number)?" : "Mark pull request #\(pr.number) ready for review?")
+                    Text(verbatim: isMerge ? "Merge pull request #\(pr.number)?" : "Mark pull request #\(pr.number) ready for review?")
                         .font(.headline)
                     Text(pr.title)
                         .font(.callout)

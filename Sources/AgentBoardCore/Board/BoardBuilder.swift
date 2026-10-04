@@ -82,11 +82,82 @@ public enum BoardBuilder {
             ))
         }
 
+        applyStacks(to: &tasks, pullRequests: pullRequests)
+
         tasks.sort { lhs, rhs in
             if lhs.sortDate != rhs.sortDate { return lhs.sortDate > rhs.sortDate }
             return lhs.id < rhs.id
         }
         return Board(tasks: tasks, repos: allRepos.sorted(), generatedAt: now)
+    }
+
+    /// PRs that target each other's branches form a stack, and a stack is one piece
+    /// of work:
+    /// - while a session works on any card in a stack, the stack's other open PRs
+    ///   are Working too (agents restack and force-push lower PRs as they go);
+    /// - otherwise a PR whose base is another open PR's branch can't land first, so
+    ///   it's In review ("Stacked") rather than Ready to merge.
+    static func applyStacks(to tasks: inout [BoardTask], pullRequests: [String: [PullRequest]]) {
+        // Open same-repo PRs by repo and head branch, from everything gh returned.
+        var openByHead: [String: [String: PullRequest]] = [:]
+        for (slug, prs) in pullRequests {
+            for pr in prs where pr.state == .open && !pr.isCrossRepository {
+                openByHead[slug.lowercased(), default: [:]][pr.headRefName] = pr
+            }
+        }
+        func base(of pr: PullRequest) -> PullRequest? {
+            guard let baseRef = pr.baseRefName, baseRef != pr.headRefName else { return nil }
+            return openByHead[pr.repo.lowercased()]?[baseRef]
+        }
+        func key(_ pr: PullRequest) -> String { "\(pr.repo.lowercased())#\(pr.number)" }
+
+        // Walk each open PR down to the bottom of its stack, then collect members.
+        var bottomOf: [String: String] = [:]
+        var prByKey: [String: PullRequest] = [:]
+        for prs in openByHead.values {
+            for pr in prs.values {
+                prByKey[key(pr)] = pr
+                var current = pr
+                var seen: Set<Int> = [pr.number]
+                while let next = base(of: current), seen.insert(next.number).inserted { current = next }
+                bottomOf[key(pr)] = key(current)
+            }
+        }
+        var stacks: [String: [PullRequest]] = [:]
+        for (member, bottom) in bottomOf { stacks[bottom, default: []].append(prByKey[member]!) }
+        func ordered(_ members: [PullRequest]) -> [Int] {
+            // Bottom first: sort by distance from the bottom of the stack.
+            func depth(_ pr: PullRequest) -> Int {
+                var d = 0, current = pr
+                var seen: Set<Int> = [pr.number]
+                while let next = base(of: current), seen.insert(next.number).inserted { d += 1; current = next }
+                return d
+            }
+            return members.sorted { (depth($0), $0.number) < (depth($1), $1.number) }.map(\.number)
+        }
+
+        // Which stacks have a card that is Working on its own account?
+        var workingVia: [String: Int] = [:]
+        for task in tasks where task.column == .working {
+            if let pr = task.pullRequest, pr.state == .open, let bottom = bottomOf[key(pr)] {
+                workingVia[bottom] = workingVia[bottom] ?? pr.number
+            }
+        }
+
+        for index in tasks.indices {
+            guard let pr = tasks[index].pullRequest, pr.state == .open,
+                  let bottom = bottomOf[key(pr)], let members = stacks[bottom], members.count > 1 else { continue }
+            var info = StackInfo(members: ordered(members), base: base(of: pr)?.number)
+            if tasks[index].column != .working, let via = workingVia[bottom], via != pr.number {
+                tasks[index].column = .working
+                tasks[index].reviewReason = nil
+                info.workingVia = via
+            } else if tasks[index].column == .ready, info.base != nil {
+                tasks[index].column = .inReview
+                tasks[index].reviewReason = .stacked
+            }
+            tasks[index].stack = info
+        }
     }
 
     /// One card per (repo, branch). Sessions on the default branch, with no

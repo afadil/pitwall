@@ -27,6 +27,8 @@ public enum ReviewReason: String, Sendable, Codable, Hashable {
     case changesRequested
     case ciRunning
     case awaitingReview
+    /// Targets another open PR's branch, so it can't land before that one.
+    case stacked
 
     public var label: String {
         switch self {
@@ -35,7 +37,24 @@ public enum ReviewReason: String, Sendable, Codable, Hashable {
         case .changesRequested: "Changes requested"
         case .ciRunning: "CI running"
         case .awaitingReview: "Awaiting review"
+        case .stacked: "Stacked"
         }
+    }
+}
+
+/// Where a task's PR sits in a stack of PRs that target each other's branches.
+public struct StackInfo: Sendable, Hashable {
+    /// Open PR numbers in the stack, bottom (targets the default branch) first.
+    public var members: [Int]
+    /// The open PR this one targets, if any.
+    public var base: Int?
+    /// PR of the stack card a session is working on, when it isn't this one.
+    public var workingVia: Int?
+
+    public init(members: [Int], base: Int? = nil, workingVia: Int? = nil) {
+        self.members = members
+        self.base = base
+        self.workingVia = workingVia
     }
 }
 
@@ -53,6 +72,8 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
     public var column: BoardColumn
     public var reviewReason: ReviewReason?
     public var isHidden: Bool
+    /// Set when the PR is part of a stack of two or more open PRs.
+    public var stack: StackInfo?
 
     public init(
         id: String,
@@ -64,7 +85,8 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         pullRequest: PullRequest?,
         column: BoardColumn,
         reviewReason: ReviewReason?,
-        isHidden: Bool = false
+        isHidden: Bool = false,
+        stack: StackInfo? = nil
     ) {
         self.id = id
         self.repo = repo
@@ -76,6 +98,7 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         self.column = column
         self.reviewReason = reviewReason
         self.isHidden = isHidden
+        self.stack = stack
     }
 
     public var primarySession: AgentSession? { sessions.first }

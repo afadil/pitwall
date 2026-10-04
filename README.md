@@ -89,9 +89,9 @@ repository each get their own card. Archived sessions are hidden unless
 
 | Column | Rule |
 | --- | --- |
-| Working | A session's turn is running (and it wrote within the last 10 minutes) |
+| Working | A session's turn is running (and it wrote within the last 10 minutes), or a session is working on another PR in the same stack (the card says "via #N") |
 | Waiting on you | The turn ended and there's no PR |
-| In review | Open PR that is a draft, has failing or running CI, has changes requested, or is awaiting a required review. The card says which. |
+| In review | Open PR that is a draft, has failing or running CI, has changes requested, is awaiting a required review, or is stacked on another open PR. The card says which. |
 | Ready to merge | Open PR, approved or no review required, CI green (or no CI) |
 | Done | PR merged or closed in the last 7 days. Older ones leave the board. |
 
@@ -106,6 +106,13 @@ How turn state is read (checked against the real files on this Mac):
 - **Codex:** the last `event_msg` of type `task_started` (running) versus
   `task_complete` or `turn_aborted` (ended).
 - When the tail can't tell, activity in the last 3 minutes counts as Working.
+
+**Stacks.** PRs that target each other's branches (for example `main ← feat/a ← feat/b`)
+form a stack, read from each PR's base branch. A stack is treated as one piece of work.
+While a session works on any card in it, the stack's other open PRs are Working too,
+because agents rebase and force-push the lower PRs as they go. When nobody is working on
+it, only the bottom PR can be Ready to merge, and the others are In review, marked
+"Stacked on #N". The details panel lists the whole stack.
 
 PRs are matched by `headRefName == branch`. A cross-repo PR (from a fork) only matches
 when the fork belongs to the checkout's `origin` owner, so someone else's fork with
@@ -193,7 +200,7 @@ Scripts/                   build-app.sh, make-icon.sh, snapshots.sh
 
 ## Testing
 
-`swift test` runs 104 tests. All fixtures are synthetic: hand-written JSON and JSONL
+`swift test` runs 111 tests. All fixtures are synthetic: hand-written JSON and JSONL
 modelled on the real formats, with a Codex database built at test time. The tests
 cover:
 
