@@ -127,13 +127,6 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         return "\(repoName) · \(branch)"
     }
 
-    /// Compact `name · branch` for cards, where the owner is mostly repetition.
-    public var shortLocationLine: String {
-        let repoName = repo?.name ?? directory.map { ($0 as NSString).lastPathComponent } ?? "No repository"
-        guard let branch else { return repoName }
-        return "\(repoName) · \(branch)"
-    }
-
     public var problems: [String] {
         sessions.compactMap(\.problem)
     }

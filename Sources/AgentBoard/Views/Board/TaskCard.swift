@@ -17,12 +17,7 @@ struct TaskCard: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(task.shortLocationLine)
-                .font(Theme.mono)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .help(task.locationLine)
+            LocationLine(task: task)
             if let problem = task.problems.first {
                 Label(problem, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
@@ -168,6 +163,29 @@ struct TaskCard: View {
         if task.isHidden { parts.append("hidden") }
         if let problem = task.problems.first { parts.append(problem) }
         return parts.joined(separator: ", ")
+    }
+}
+
+/// `repo · branch`, where the branch keeps its space and the repo name gives way first.
+private struct LocationLine: View {
+    let task: BoardTask
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text(task.repo?.name ?? task.directory.map { ($0 as NSString).lastPathComponent } ?? "No repository")
+                .truncationMode(.tail)
+            if let branch = task.branch {
+                Text(" · ")
+                Text(branch)
+                    .truncationMode(.middle)
+                    .layoutPriority(1)
+            }
+        }
+        .font(Theme.mono)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
+        .help(task.locationLine)
+        .accessibilityElement(children: .combine)
     }
 }
 

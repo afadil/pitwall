@@ -21,6 +21,7 @@ struct MenuBarPanel: View {
 
     @Environment(AppModel.self) private var model
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var segment: Segment = .needsYou
 
     var body: some View {
@@ -70,8 +71,9 @@ struct MenuBarPanel: View {
                 Image(systemName: "arrow.clockwise")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .rotationEffect(.degrees(model.isRefreshing ? 180 : 0))
-                    .animation(model.isRefreshing ? .linear(duration: 0.6).repeatForever(autoreverses: false) : .default, value: model.isRefreshing)
+                    .rotationEffect(.degrees(model.isRefreshing && !reduceMotion ? 180 : 0))
+                    .opacity(model.isRefreshing && reduceMotion ? 0.4 : 1)
+                    .animation(model.isRefreshing && !reduceMotion ? .linear(duration: 0.6).repeatForever(autoreverses: false) : .default, value: model.isRefreshing)
             }
             .buttonStyle(.plain)
             .help("Refresh")
