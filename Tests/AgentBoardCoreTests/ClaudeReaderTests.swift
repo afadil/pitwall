@@ -175,3 +175,29 @@ struct ClaudeReaderTests {
         #expect(reader.lastTranscriptBytesRead == 0)
     }
 }
+
+@Suite("Opening sessions in their apps")
+struct AppLinkTests {
+    @Test func claudeAndCodexDeepLinks() {
+        let claude = AgentSession.make(.claude, id: "local_11111111-aaaa-4aaa-8aaa-000000000001")
+        #expect(claude.appURL?.absoluteString == "claude://claude.ai/epitaxy/local_11111111-aaaa-4aaa-8aaa-000000000001")
+        let codex = AgentSession.make(.codex, id: "019a0001-0000-7000-8000-000000000001")
+        #expect(codex.appURL?.absoluteString == "codex://threads/019a0001-0000-7000-8000-000000000001")
+    }
+
+    @Test func oddIdentifiersAreEscaped() {
+        #expect(AgentSession.make(.codex, id: "a/b?c").appURL?.absoluteString == "codex://threads/a%2Fb%3Fc")
+        #expect(AgentSession.make(.claude, id: "").appURL == nil)
+    }
+
+    @Test func doubleClickOpensTheNewestSessionOnTheBranch() {
+        let older = AgentSession.make(.claude, id: "old", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-600))
+        let newer = AgentSession.make(.codex, id: "new", branch: "feat/x", lastActivity: testNow.addingTimeInterval(-60))
+        var linkedOnly = AgentSession.make(.claude, id: "linked", branch: "main", lastActivity: testNow)
+        linkedOnly.linkedPullRequests = [LinkedPullRequest(repo: orbit.id, branch: "feat/x", number: 1)]
+        let board = BoardBuilder.build(sessions: [older, newer, linkedOnly], repos: [older.id: orbit, newer.id: orbit, linkedOnly.id: orbit],
+                                       pullRequests: ["acme/orbit": [.make(1, branch: "feat/x")]], settings: BoardSettings(), now: testNow)
+        let task = board.tasks.first { $0.branch == "feat/x" }
+        #expect(task?.sessionToOpen?.id == newer.id) // not the linked session, even though it's newer
+    }
+}

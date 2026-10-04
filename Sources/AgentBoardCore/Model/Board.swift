@@ -80,6 +80,11 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
 
     public var primarySession: AgentSession? { sessions.first }
 
+    /// The session a double-click opens: the newest one on this branch.
+    public var sessionToOpen: AgentSession? {
+        onBranchSessions.first ?? sessions.first
+    }
+
     /// Sessions currently on this task's branch.
     public var onBranchSessions: [AgentSession] {
         sessions.filter { !linkedSessionIDs.contains($0.id) }

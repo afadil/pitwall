@@ -38,6 +38,11 @@ struct BoardView: View {
         .onKeyPress(.rightArrow) { move(columns: 1) }
         .onKeyPress(.leftArrow) { move(columns: -1) }
         .onKeyPress(.return) {
+            guard let task = model.selectedTask else { return .ignored }
+            model.openInApp(task)
+            return .handled
+        }
+        .onKeyPress(.space) {
             guard model.selectedTask != nil else { return .ignored }
             model.inspectorOpen.toggle()
             return .handled
@@ -384,14 +389,16 @@ private struct DoneRow: View {
         )
         .contentShape(Rectangle())
         .onHover { hovered = $0 }
-        .onTapGesture {
+        .gesture(TapGesture(count: 2).onEnded { model.openInApp(task) })
+        .simultaneousGesture(TapGesture().onEnded {
             model.select(task)
             model.inspectorOpen = true
-        }
+        })
         .contextMenu { TaskActionsMenu(task: task) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(TaskCard.accessibilityDescription(task, now: model.now))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { model.select(task); model.inspectorOpen = true }
+        .accessibilityActions { TaskAccessibilityActions(task: task) }
     }
 }

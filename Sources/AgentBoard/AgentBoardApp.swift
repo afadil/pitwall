@@ -107,6 +107,9 @@ struct AppCommands: Commands {
         }
         CommandMenu("Task") {
             let task = model.selectedTask
+            Button("Open in \(task?.sessionToOpen?.app.displayName ?? "app")") { task.map { model.openInApp($0) } }
+                .keyboardShortcut(.downArrow, modifiers: .command)
+                .disabled(task?.sessionToOpen?.appURL == nil)
             Button("Open pull request") { task.map(model.openPullRequest) }
                 .keyboardShortcut("o")
                 .disabled(task?.pullRequest?.url == nil)

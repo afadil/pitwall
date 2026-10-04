@@ -283,6 +283,21 @@ final class AppModel {
         editorURL.map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? "Editor"
     }
 
+    /// Opens the session in the Claude or Codex app through its deep link.
+    func openInApp(_ session: AgentSession) {
+        guard let url = session.appURL else { return }
+        guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil else {
+            show(.failure, "\(session.app.displayName) isn't installed")
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
+    func openInApp(_ task: BoardTask) {
+        guard let session = task.sessionToOpen else { return }
+        openInApp(session)
+    }
+
     func copyResumeCommand(_ session: AgentSession) {
         guard let command = session.resumeCommand else { return }
         NSPasteboard.general.clearContents()

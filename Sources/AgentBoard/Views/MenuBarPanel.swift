@@ -92,6 +92,7 @@ struct MenuBarPanel: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(waiting == 1 ? "task waiting" : "tasks waiting")
                         .font(.callout.weight(.medium))
+                        .fixedSize()
                     Text("\(model.board.count(.working)) working · \(model.board.count(.ready)) ready")
                         .font(Theme.monoSmall)
                         .foregroundStyle(.secondary)
@@ -127,7 +128,7 @@ struct MenuBarPanel: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(tasks.dropFirst().prefix(12)) { task in
-                            PanelRow(task: task) { openBoard(selecting: task) }
+                            PanelRow(task: task, showOnBoard: { openBoard(selecting: task) })
                         }
                     }
                     .padding(.horizontal, 6)
@@ -238,20 +239,19 @@ private struct FeaturedTask: View {
                 .truncationMode(.middle)
                 .padding(.leading, 15)
             HStack(spacing: 6) {
-                if let session = task.onBranchSessions.first ?? task.sessions.first, session.resumeCommand != nil {
+                if task.pullRequest?.url != nil {
+                    Button("Open PR") { model.openPullRequest(task) }
+                        .buttonStyle(PanelActionStyle())
+                }
+                if let session = task.sessionToOpen, session.resumeCommand != nil {
                     Button("Copy resume") { model.copyResumeCommand(session) }
                         .buttonStyle(PanelActionStyle())
                 }
-                if task.directory != nil {
-                    Button("Open folder") { model.openFolder(task) }
-                        .buttonStyle(PanelActionStyle())
-                }
-                Spacer()
-                if task.pullRequest?.url != nil {
-                    Button("Open PR") { model.openPullRequest(task) }
-                        .buttonStyle(PanelActionStyle(prominent: true))
-                } else {
-                    Button("Details") { open() }
+                Button("Details") { open() }
+                    .buttonStyle(PanelActionStyle())
+                Spacer(minLength: 4)
+                if let session = task.sessionToOpen, session.appURL != nil {
+                    Button("Open in \(session.app.displayName)") { model.openInApp(session) }
                         .buttonStyle(PanelActionStyle(prominent: true))
                 }
             }
@@ -265,14 +265,17 @@ private struct FeaturedTask: View {
     }
 }
 
+/// A row: clicking opens the session in its app, the context menu offers the rest.
 private struct PanelRow: View {
     @Environment(AppModel.self) private var model
     let task: BoardTask
-    let open: () -> Void
+    let showOnBoard: () -> Void
     @State private var hovered = false
 
     var body: some View {
-        Button(action: open) {
+        Button {
+            if task.sessionToOpen?.appURL != nil { model.openInApp(task) } else { showOnBoard() }
+        } label: {
             HStack(spacing: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
@@ -298,7 +301,12 @@ private struct PanelRow: View {
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
-        .contextMenu { TaskActionsMenu(task: task) }
+        .help(task.sessionToOpen.map { "Open in \($0.app.displayName)" } ?? "Show on the board")
+        .contextMenu {
+            Button("Show on board", systemImage: "rectangle.split.3x1") { showOnBoard() }
+            Divider()
+            TaskActionsMenu(task: task)
+        }
         .accessibilityLabel(TaskCard.accessibilityDescription(task, now: model.now))
     }
 

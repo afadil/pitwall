@@ -36,10 +36,13 @@ struct TaskCard: View {
         .contentShape(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         .onHover { hovered = $0 }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovered)
-        .onTapGesture {
+        // Click selects and shows details; double-click opens the session in its app.
+        .gesture(TapGesture(count: 2).onEnded { model.openInApp(task) })
+        .simultaneousGesture(TapGesture().onEnded {
             model.select(task)
             model.inspectorOpen = true
-        }
+        })
+        .help(task.sessionToOpen.map { "Double-click to open in \($0.app.displayName)" } ?? "")
         .contextMenu { TaskActionsMenu(task: task) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Self.accessibilityDescription(task, now: model.now))
@@ -82,6 +85,11 @@ struct TaskCard: View {
 
     private var quickActions: some View {
         HStack(spacing: 4) {
+            if let session = task.sessionToOpen, session.appURL != nil {
+                SoftIconButton(symbol: "arrow.up.forward.app", label: "Open in \(session.app.displayName)", size: 22) {
+                    model.openInApp(session)
+                }
+            }
             if task.pullRequest?.url != nil {
                 SoftIconButton(symbol: "arrow.up.right", label: "Open pull request", size: 22) {
                     model.openPullRequest(task)
@@ -214,6 +222,14 @@ struct TaskActionsMenu: View {
     let task: BoardTask
 
     var body: some View {
+        let openable = task.sessions.filter { $0.appURL != nil }
+        if openable.count == 1, let session = openable.first {
+            Button("Open in \(session.app.displayName)", systemImage: "arrow.up.forward.app") { model.openInApp(session) }
+        } else if openable.count > 1 {
+            ForEach(openable) { session in
+                Button("Open in \(session.app.displayName): \(session.title)", systemImage: "arrow.up.forward.app") { model.openInApp(session) }
+            }
+        }
         if task.pullRequest?.url != nil {
             Button("Open pull request", systemImage: "arrow.up.right.square") { model.openPullRequest(task) }
         }
@@ -258,6 +274,9 @@ struct TaskAccessibilityActions: View {
     let task: BoardTask
 
     var body: some View {
+        if let session = task.sessionToOpen, session.appURL != nil {
+            Button("Open in \(session.app.displayName)") { model.openInApp(session) }
+        }
         if task.pullRequest?.url != nil {
             Button("Open pull request") { model.openPullRequest(task) }
         }

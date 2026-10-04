@@ -120,6 +120,11 @@ since the session is busy elsewhere.
 All actions are in the card's context menu, the details panel, the **Task** menu and
 VoiceOver actions:
 
+- **Open in Claude or Codex** (double-click a card, Return, or ⌘↓): opens the session
+  in its own app through the app's deep link: `claude://claude.ai/epitaxy/<sessionId>`
+  (the form the Claude app uses for its own session links) or `codex://threads/<thread id>`
+  (a route the Codex app registers). A card with several sessions opens the newest one
+  on its branch; the context menu lists each. In the menu bar panel, clicking a row opens it.
 - Open pull request (⌘O); open folder in Finder, Terminal or your default code editor (⇧⌘O)
 - Copy resume command (⇧⌘C): `cd <folder> && claude --resume <cliSessionId>` or
   `cd <folder> && codex resume <thread id>`. The `cd` is there because Claude looks up
@@ -131,7 +136,8 @@ VoiceOver actions:
   nothing merges if new commits were pushed after you looked.
 
 Keyboard: ⌘1 Board, ⌘2 Overview, ⌘, Settings, arrow keys move between cards, Return
-toggles details, Esc closes them, ⌥⌘I shows details, ⇧⌘H shows hidden cards.
+opens the session in its app, Space toggles details, Esc closes them, ⌥⌘I shows
+details, ⇧⌘H shows hidden cards.
 
 ## Design
 
@@ -187,7 +193,7 @@ Scripts/                   build-app.sh, make-icon.sh, snapshots.sh
 
 ## Testing
 
-`swift test` runs 101 tests. All fixtures are synthetic: hand-written JSON and JSONL
+`swift test` runs 104 tests. All fixtures are synthetic: hand-written JSON and JSONL
 modelled on the real formats, with a Codex database built at test time. The tests
 cover:
 

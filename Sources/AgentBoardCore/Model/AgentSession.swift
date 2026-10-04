@@ -103,6 +103,21 @@ public struct AgentSession: Sendable, Identifiable, Hashable {
 
     public var id: String { "\(app.rawValue):\(sessionID)" }
 
+    /// Deep link that opens this session in its own app.
+    ///
+    /// - Claude: `claude://claude.ai/epitaxy/<sessionId>`, the form the Claude app
+    ///   uses for its own session links.
+    /// - Codex: `codex://threads/<thread id>`, the route the Codex app registers.
+    public var appURL: URL? {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "/?#")
+        guard !sessionID.isEmpty, let id = sessionID.addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
+        switch app {
+        case .claude: return URL(string: "claude://claude.ai/epitaxy/\(id)")
+        case .codex: return URL(string: "codex://threads/\(id)")
+        }
+    }
+
     /// Shell command that resumes this session from Terminal.
     ///
     /// Claude looks sessions up per project directory, so the command changes

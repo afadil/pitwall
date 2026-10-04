@@ -71,6 +71,12 @@ struct TaskInspector: View {
                     }
                 }
             }
+            if let session = task.sessionToOpen, session.appURL != nil {
+                PillButton(title: "Open in \(session.app.displayName)", symbol: "arrow.up.forward.app") {
+                    model.openInApp(session)
+                }
+                .padding(.top, 4)
+            }
         }
     }
 
@@ -157,7 +163,7 @@ struct TaskInspector: View {
             VStack(spacing: 0) {
                 ForEach(Array(task.sessions.enumerated()), id: \.element.id) { index, session in
                     if index > 0 { Divider().overlay(Theme.hairline).padding(.leading, 12) }
-                    SessionRow(session: session, linked: task.linkedSessionIDs.contains(session.id))
+                    SessionRow(session: session, linked: task.linkedSessionIDs.contains(session.id), showOpen: task.sessions.count > 1)
                 }
             }
             .surface()
@@ -199,6 +205,8 @@ private struct SessionRow: View {
     @Environment(AppModel.self) private var model
     let session: AgentSession
     let linked: Bool
+    /// Per-session "Open in …" when the card has several sessions (the header covers one).
+    let showOpen: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -219,6 +227,15 @@ private struct SessionRow: View {
                 Text("Opened this pull request, now on \(session.branch ?? "another branch")")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            if showOpen, session.appURL != nil {
+                Button {
+                    model.openInApp(session)
+                } label: {
+                    Label("Open in \(session.app.displayName)", systemImage: "arrow.up.forward.app")
+                        .font(.caption.weight(.medium))
+                }
+                .buttonStyle(.borderless)
             }
             if let command = session.resumeCommand {
                 Button {
