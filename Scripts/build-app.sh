@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds "build/Agent Board.app" from the Swift package. No Xcode project needed.
+# Builds "build/Pitwall.app" from the Swift package. No Xcode project needed.
 #   Scripts/build-app.sh [release|debug]
 set -euo pipefail
 
@@ -7,13 +7,13 @@ CONFIG="${1:-release}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-swift build -c "$CONFIG" --product AgentBoard
+swift build -c "$CONFIG" --product Pitwall
 BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
 
-APP="$ROOT/build/Agent Board.app"
+APP="$ROOT/build/Pitwall.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/AgentBoard" "$APP/Contents/MacOS/AgentBoard"
+cp "$BIN_DIR/Pitwall" "$APP/Contents/MacOS/Pitwall"
 cp "$ROOT/Resources/Info.plist" "$APP/Contents/Info.plist"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 

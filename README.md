@@ -1,4 +1,4 @@
-# Agent Board
+# Pitwall
 
 A native macOS app that shows your Claude desktop and Codex desktop sessions as a
 kanban board: one card per repository and branch, with the pull request, CI and
@@ -28,15 +28,15 @@ Everything runs from the command line. There's no Xcode project; it's a Swift pa
 
 ```bash
 swift test                      # unit tests (core module, synthetic fixtures)
-Scripts/build-app.sh            # builds build/Agent Board.app (release)
-open "build/Agent Board.app"    # launch
+Scripts/build-app.sh            # builds build/Pitwall.app (release)
+open "build/Pitwall.app"    # launch
 ```
 
 Other commands:
 
 ```bash
-swift run agentboard-check            # read-only: print what the board sees on this Mac
-swift run agentboard-check --json     # same, as JSON
+swift run pitwall-check            # read-only: print what the board sees on this Mac
+swift run pitwall-check --json     # same, as JSON
 Scripts/build-app.sh debug            # debug build of the app bundle
 Scripts/make-icon.sh                  # regenerate Resources/AppIcon.icns from IconArt.swift
 Scripts/snapshots.sh <dir> --demo --appearance dark   # screenshot every screen
@@ -48,7 +48,7 @@ forces an appearance, and `--verbose` logs refreshes.
 
 ## What it reads
 
-Everything is read-only. Agent Board never writes to, moves or deletes anything in
+Everything is read-only. Pitwall never writes to, moves or deletes anything in
 these folders.
 
 | Source | Path | What's used |
@@ -82,11 +82,11 @@ Details that matter:
 
 ## What it stores
 
-Agent Board keeps no copy of your sessions or PRs; it reads them on every refresh.
+Pitwall keeps no copy of your sessions or PRs; it reads them on every refresh.
 It writes only two things, both in its own places:
 
-- Preferences in macOS user defaults (`~/Library/Preferences/local.agentboard.AgentBoard.plist`).
-- Your organization in `~/Library/Application Support/Agent Board/organization.json`:
+- Preferences in macOS user defaults (`~/Library/Preferences/com.teymz.pitwall.plist`).
+- Your organization in `~/Library/Application Support/Pitwall/organization.json`:
   tags, each card's lane, tags and hidden flag, keyed by task (repo and branch), so they
   carry over to new sessions on the same branch. It's plain JSON, written atomically.
   Malformed parts are skipped on load, an unreadable file is kept aside rather than
@@ -210,7 +210,7 @@ Accessibility:
 ## Layout
 
 ```
-Sources/AgentBoardCore/    readers, model, board rules, GitHub client (no UI; unit tested)
+Sources/PitwallCore/    readers, model, board rules, GitHub client (no UI; unit tested)
   Readers/                 ClaudeReader, ClaudeTranscript, CodexReader
   Git/                     RepoResolver (git behind the GitRunning protocol)
   GitHub/                  GHRunning protocol, GHCLI, GitHubClient, PRParsing, PRMatcher,
@@ -218,9 +218,9 @@ Sources/AgentBoardCore/    readers, model, board rules, GitHub client (no UI; un
   Board/                   BoardBuilder, BoardRules, Timeline
   Engine/                  RefreshEngine (actor), FileWatcher (FSEvents)
   Demo/                    synthetic demo data
-Sources/AgentBoard/        SwiftUI app
-Sources/agentboard-check/  read-only real-data check
-Tests/AgentBoardCoreTests/ unit tests and synthetic fixtures
+Sources/Pitwall/           SwiftUI app
+Sources/pitwall-check/  read-only real-data check
+Tests/PitwallCoreTests/ unit tests and synthetic fixtures
 Scripts/                   build-app.sh, make-icon.sh, snapshots.sh
 ```
 
@@ -241,7 +241,7 @@ cover:
   reader creates no `-wal`/`-shm` files
 - the file watcher
 
-`swift run agentboard-check` compares nothing by itself; it prints what Agent Board
+`swift run pitwall-check` compares nothing by itself; it prints what Pitwall
 reads on this Mac so it can be checked against the apps and GitHub.
 
 ## Known limitations

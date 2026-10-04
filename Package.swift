@@ -2,30 +2,30 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentBoard",
+    name: "Pitwall",
     platforms: [.macOS("26.0")],
     products: [
-        .executable(name: "AgentBoard", targets: ["AgentBoard"]),
-        .executable(name: "agentboard-check", targets: ["agentboard-check"]),
-        .library(name: "AgentBoardCore", targets: ["AgentBoardCore"]),
+        .executable(name: "Pitwall", targets: ["Pitwall"]),
+        .executable(name: "pitwall-check", targets: ["pitwall-check"]),
+        .library(name: "PitwallCore", targets: ["PitwallCore"]),
     ],
     targets: [
         .target(
-            name: "AgentBoardCore",
+            name: "PitwallCore",
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),
         .executableTarget(
-            name: "AgentBoard",
-            dependencies: ["AgentBoardCore"],
+            name: "Pitwall",
+            dependencies: ["PitwallCore"],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
         .executableTarget(
-            name: "agentboard-check",
-            dependencies: ["AgentBoardCore"]
+            name: "pitwall-check",
+            dependencies: ["PitwallCore"]
         ),
         .testTarget(
-            name: "AgentBoardCoreTests",
-            dependencies: ["AgentBoardCore"],
+            name: "PitwallCoreTests",
+            dependencies: ["PitwallCore"],
             resources: [.copy("Fixtures")]
         ),
     ]

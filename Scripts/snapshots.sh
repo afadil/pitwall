@@ -8,10 +8,10 @@ set -euo pipefail
 
 OUT="$1"; shift
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BIN="$ROOT/build/Agent Board.app/Contents/MacOS/AgentBoard"
+BIN="$ROOT/build/Pitwall.app/Contents/MacOS/Pitwall"
 [ -x "$BIN" ] || { echo "Build first: Scripts/build-app.sh" >&2; exit 1; }
 
-ARGS=(); PREFIX="agentboard"
+ARGS=(); PREFIX="pitwall"
 while [ $# -gt 0 ]; do
   case "$1" in
     --demo) ARGS+=(--demo) ;;

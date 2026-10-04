@@ -1,4 +1,4 @@
-# Agent Board: product spec
+# Pitwall: product spec
 
 A small native macOS app that shows the work I do in the **Claude desktop app**
 and the **Codex desktop app** as a kanban board, with each task's GitHub pull

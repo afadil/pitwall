@@ -3,8 +3,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-swift build --product AgentBoard
-BIN="$(swift build --show-bin-path)/AgentBoard"
+swift build --product Pitwall
+BIN="$(swift build --show-bin-path)/Pitwall"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 "$BIN" --render-icon "$WORK"
