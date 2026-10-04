@@ -147,14 +147,6 @@ public struct BoardTask: Sendable, Identifiable, Hashable {
         pullRequest?.labels ?? []
     }
 
-    public var isTurnRunning: Bool {
-        onBranchSessions.contains { $0.turn == .running }
-    }
-
-    public var isArchived: Bool {
-        !sessions.isEmpty && sessions.allSatisfy(\.isArchived)
-    }
-
     /// Folder to open: the newest session's working directory.
     public var directory: String? {
         sessions.first(where: \.cwdExists)?.cwd ?? sessions.lazy.compactMap(\.cwd).first

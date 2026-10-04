@@ -107,7 +107,6 @@ public struct BoardRow: Identifiable, Hashable, Sendable {
     }
 
     public var isFastLane: Bool { kind == .lane(.fast) }
-    public var isLater: Bool { kind == .lane(.later) }
 
     /// Cards still in play (Done doesn't count toward the fast-lane limit).
     public var activeCount: Int { tasks.reduce(0) { $0 + ($1.column == .done ? 0 : 1) } }

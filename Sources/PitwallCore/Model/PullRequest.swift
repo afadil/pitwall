@@ -36,8 +36,6 @@ public struct CheckSummary: Sendable, Codable, Hashable {
         self.skipped = skipped
     }
 
-    public var total: Int { passed + failed + pending + skipped }
-
     public var state: CIState {
         if failed > 0 { return .failing }
         if pending > 0 { return .pending }

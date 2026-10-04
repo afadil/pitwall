@@ -5,13 +5,6 @@ import Observation
 public enum PRWriteAction: Sendable, Hashable {
     case markReady
     case merge(MergeMethod)
-
-    public var verb: String {
-        switch self {
-        case .markReady: "Mark ready for review"
-        case .merge: "Merge"
-        }
-    }
 }
 
 /// A write that has been requested but not yet confirmed. Creating one has no side effects.
