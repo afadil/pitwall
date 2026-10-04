@@ -1,0 +1,12 @@
+{
+  "sessionId": "local_11111111-aaaa-4aaa-8aaa-000000000004",
+  "cliSessionId": "c0000004-0000-4000-8000-000000000004",
+  "title": "Fix date parsing",
+  "titleSource": "auto",
+  "isArchived": true,
+  "createdAt": 1790950000000,
+  "lastActivityAt": 1790960000000,
+  "cwd": "/Users/dev/old/orbit-copy",
+  "gitAnchors": [],
+  "completedTurns": "not-a-number"
+}

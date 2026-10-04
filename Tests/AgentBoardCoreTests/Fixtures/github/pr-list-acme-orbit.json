@@ -1,0 +1,98 @@
+[
+  {
+    "baseRefName": "main",
+    "closedAt": null,
+    "headRefName": "feat/offline-sync",
+    "headRefOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "headRepositoryOwner": {"id": "O_kgSYNTH1", "login": "acme"},
+    "isCrossRepository": false,
+    "isDraft": false,
+    "mergedAt": null,
+    "number": 42,
+    "reviewDecision": "APPROVED",
+    "state": "OPEN",
+    "statusCheckRollup": [
+      {"__typename": "CheckRun", "completedAt": "2026-10-04T14:20:00Z", "conclusion": "SUCCESS", "detailsUrl": "https://github.com/acme/orbit/actions/runs/1/job/1", "name": "lint", "startedAt": "2026-10-04T14:18:00Z", "status": "COMPLETED", "workflowName": "CI"},
+      {"__typename": "CheckRun", "completedAt": "2026-10-04T14:10:00Z", "conclusion": "CANCELLED", "detailsUrl": "https://github.com/acme/orbit/actions/runs/1/job/2", "name": "test (macos)", "startedAt": "2026-10-04T14:05:00Z", "status": "COMPLETED", "workflowName": "CI"},
+      {"__typename": "CheckRun", "completedAt": "2026-10-04T14:30:00Z", "conclusion": "SUCCESS", "detailsUrl": "https://github.com/acme/orbit/actions/runs/2/job/3", "name": "test (macos)", "startedAt": "2026-10-04T14:19:00Z", "status": "COMPLETED", "workflowName": "CI"},
+      {"__typename": "CheckRun", "completedAt": "2026-10-04T14:21:00Z", "conclusion": "SKIPPED", "detailsUrl": "https://github.com/acme/orbit/actions/runs/2/job/4", "name": "deploy preview", "startedAt": "2026-10-04T14:21:00Z", "status": "COMPLETED", "workflowName": "Preview"}
+    ],
+    "title": "feat(sync): queue offline edits",
+    "updatedAt": "2026-10-04T14:31:00Z",
+    "url": "https://github.com/acme/orbit/pull/42",
+    "labels": [{"name": "enhancement"}]
+  },
+  {
+    "baseRefName": "main", "closedAt": "2026-10-01T09:00:00Z", "headRefName": "feat/offline-sync",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": null,
+    "number": 41, "reviewDecision": "", "state": "CLOSED", "statusCheckRollup": [],
+    "title": "feat(sync): first attempt", "updatedAt": "2026-10-01T09:00:00Z", "url": "https://github.com/acme/orbit/pull/41"
+  },
+  {
+    "baseRefName": "main", "closedAt": "2026-10-03T18:00:00Z", "headRefName": "fix/flaky-upload",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": "2026-10-03T18:00:00Z",
+    "number": 40, "reviewDecision": "APPROVED", "state": "MERGED", "statusCheckRollup": [],
+    "title": "fix(upload): retry on 503", "updatedAt": "2026-10-03T18:00:05Z", "url": "https://github.com/acme/orbit/pull/40"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "feat/dark-mode",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": true, "mergedAt": null,
+    "number": 39, "reviewDecision": "", "state": "OPEN",
+    "statusCheckRollup": [{"__typename": "CheckRun", "conclusion": "SUCCESS", "name": "lint", "status": "COMPLETED", "workflowName": "CI", "completedAt": "2026-10-04T10:00:00Z"}],
+    "title": "feat(ui): dark mode", "updatedAt": "2026-10-04T10:00:00Z", "url": "https://github.com/acme/orbit/pull/39"
+  },
+  {
+    "baseRefName": "main", "closedAt": "2026-09-20T12:00:00Z", "headRefName": "fix/date-parsing",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": "2026-09-20T12:00:00Z",
+    "number": 38, "reviewDecision": "", "state": "MERGED", "statusCheckRollup": [],
+    "title": "fix(dates): handle pre-epoch", "updatedAt": "2026-09-20T12:00:00Z", "url": "https://github.com/acme/orbit/pull/38"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "feat/offline-sync",
+    "headRepositoryOwner": {"id": "U_kgSYNTH9", "login": "someone-else"}, "isCrossRepository": true, "isDraft": false, "mergedAt": null,
+    "number": 37, "reviewDecision": "", "state": "OPEN", "statusCheckRollup": [],
+    "title": "Offline sync (community fork)", "updatedAt": "2026-10-04T15:00:00Z", "url": "https://github.com/acme/orbit/pull/37"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "main",
+    "headRepositoryOwner": {"login": "contributor"}, "isCrossRepository": true, "isDraft": false, "mergedAt": null,
+    "number": 36, "reviewDecision": "", "state": "OPEN", "statusCheckRollup": [],
+    "title": "Typo fixes from my main branch", "updatedAt": "2026-10-04T08:00:00Z", "url": "https://github.com/acme/orbit/pull/36"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "chore/deps",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": null,
+    "number": 35, "reviewDecision": "APPROVED", "state": "OPEN",
+    "statusCheckRollup": [
+      {"__typename": "CheckRun", "conclusion": "FAILURE", "name": "test (linux)", "status": "COMPLETED", "workflowName": "CI", "completedAt": "2026-10-04T11:00:00Z"},
+      {"__typename": "CheckRun", "conclusion": "SUCCESS", "name": "lint", "status": "COMPLETED", "workflowName": "CI", "completedAt": "2026-10-04T11:00:00Z"}
+    ],
+    "title": "chore: bump dependencies", "updatedAt": "2026-10-04T11:00:00Z", "url": "https://github.com/acme/orbit/pull/35"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "feat/search",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": null,
+    "number": 34, "reviewDecision": "CHANGES_REQUESTED", "state": "OPEN",
+    "statusCheckRollup": [{"__typename": "CheckRun", "conclusion": "SUCCESS", "name": "lint", "status": "COMPLETED", "workflowName": "CI", "completedAt": "2026-10-04T09:00:00Z"}],
+    "title": "feat: search", "updatedAt": "2026-10-04T09:30:00Z", "url": "https://github.com/acme/orbit/pull/34"
+  },
+  {
+    "baseRefName": "main", "closedAt": "0001-01-01T00:00:00Z", "headRefName": "feat/export",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": "0001-01-01T00:00:00Z",
+    "number": 33, "reviewDecision": "", "state": "OPEN",
+    "statusCheckRollup": [
+      {"__typename": "CheckRun", "conclusion": "", "name": "build", "status": "IN_PROGRESS", "workflowName": "CI", "startedAt": "2026-10-04T15:10:00Z"},
+      {"__typename": "StatusContext", "context": "ci/legacy", "state": "PENDING", "targetUrl": "https://ci.example.invalid/1"}
+    ],
+    "title": "feat: export", "updatedAt": "2026-10-04T15:10:00Z", "url": "https://github.com/acme/orbit/pull/33"
+  },
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "feat/cache",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": null,
+    "number": 32, "reviewDecision": "REVIEW_REQUIRED", "state": "OPEN",
+    "statusCheckRollup": [{"__typename": "StatusContext", "context": "ci/legacy", "state": "SUCCESS", "targetUrl": "https://ci.example.invalid/2"}],
+    "title": "feat: cache", "updatedAt": "2026-10-04T07:00:00Z", "url": "https://github.com/acme/orbit/pull/32"
+  },
+  {"number": "oops", "headRefName": "broken/entry", "state": "OPEN"},
+  {"title": "no number or branch"}
+]

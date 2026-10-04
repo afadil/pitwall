@@ -1,0 +1,6 @@
+{"timestamp":"2026-10-04T15:00:00.000Z","type":"session_meta","ordinal":0,"payload":{"id":"019a0002-0000-7000-8000-000000000002","cwd":"/Users/dev/work/orbit","originator":"Codex Desktop","source":"vscode","git":{"commit_hash":"0000000000000000000000000000000000000002","branch":"feat/offline-sync","repository_url":"git@github.com:acme/orbit.git"}}}
+{"timestamp":"2026-10-04T15:00:01.000Z","type":"event_msg","ordinal":1,"payload":{"type":"task_started","turn_id":"turn-1"}}
+{"timestamp":"2026-10-04T15:02:00.000Z","type":"event_msg","ordinal":2,"payload":{"type":"task_complete","turn_id":"turn-1"}}
+{"timestamp":"2026-10-04T15:12:00.000Z","type":"event_msg","ordinal":3,"payload":{"type":"task_started","turn_id":"turn-2"}}
+{"timestamp":"2026-10-04T15:12:05.000Z","type":"response_item","ordinal":4,"payload":{"type":"reasoning","summary":[],"encrypted_content":"synthetic"}}
+{"timestamp":"2026-10-04T15:16:40.000Z","type":"event_msg","ordinal":5,"payload":{"type":"item_completed","turn_id":"turn-2"}}

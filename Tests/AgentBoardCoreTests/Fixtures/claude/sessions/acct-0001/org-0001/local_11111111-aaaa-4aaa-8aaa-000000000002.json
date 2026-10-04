@@ -1,0 +1,14 @@
+{
+  "sessionId": "local_11111111-aaaa-4aaa-8aaa-000000000002",
+  "cliSessionId": "c0000002-0000-4000-8000-000000000002",
+  "title": "Investigate flaky upload test",
+  "titleSource": "user",
+  "isArchived": false,
+  "createdAt": 1791118800000,
+  "lastActivityAt": 1791126900000,
+  "cwd": "/Users/dev/work/orbit",
+  "originCwd": "/Users/dev/work/orbit",
+  "gitAnchors": [{"gitRoot": "/Users/dev/work/orbit", "commonDir": "/Users/dev/work/orbit/.git", "trustedAt": 1791118800000}],
+  "completedTurns": 12,
+  "model": "claude-model-x"
+}

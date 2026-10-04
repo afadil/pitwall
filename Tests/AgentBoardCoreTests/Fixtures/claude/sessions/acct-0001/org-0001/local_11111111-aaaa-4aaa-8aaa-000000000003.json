@@ -1,0 +1,14 @@
+{
+  "sessionId": "local_11111111-aaaa-4aaa-8aaa-000000000003",
+  "cliSessionId": "c0000003-0000-4000-8000-000000000003",
+  "title": "Draft release notes",
+  "titleSource": null,
+  "isArchived": false,
+  "createdAt": 1791036000000,
+  "lastActivityAt": 1791039600000,
+  "cwd": "/Users/dev/work/lumen/.claude/worktrees/brave-otter",
+  "originCwd": "/Users/dev/work/lumen",
+  "gitAnchors": null,
+  "branch": "claude/brave-otter",
+  "completedTurns": 2
+}

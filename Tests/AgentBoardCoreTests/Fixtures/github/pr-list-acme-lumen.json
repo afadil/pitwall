@@ -1,0 +1,15 @@
+[
+  {
+    "baseRefName": "main", "closedAt": null, "headRefName": "codex/csv-rounding", "headRefOid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": null,
+    "number": 7, "reviewDecision": "", "state": "OPEN",
+    "statusCheckRollup": [{"__typename": "CheckRun", "conclusion": "TIMED_OUT", "name": "test", "status": "COMPLETED", "workflowName": "CI", "completedAt": "2026-10-04T13:20:00Z"}],
+    "title": "fix(export): round CSV totals", "updatedAt": "2026-10-04T13:20:00Z", "url": "https://github.com/acme/lumen/pull/7"
+  },
+  {
+    "baseRefName": "main", "closedAt": "2026-10-03T11:00:00Z", "headRefName": "codex/theme-tokens",
+    "headRepositoryOwner": {"login": "acme"}, "isCrossRepository": false, "isDraft": false, "mergedAt": "2026-10-03T11:00:00Z",
+    "number": 6, "reviewDecision": "APPROVED", "state": "MERGED", "statusCheckRollup": [],
+    "title": "feat(theme): design tokens", "updatedAt": "2026-10-03T11:00:00Z", "url": "https://github.com/acme/lumen/pull/6"
+  }
+]

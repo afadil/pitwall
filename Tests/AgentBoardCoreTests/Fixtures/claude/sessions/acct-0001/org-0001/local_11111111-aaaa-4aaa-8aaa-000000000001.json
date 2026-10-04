@@ -1,0 +1,24 @@
+{
+  "sessionId": "local_11111111-aaaa-4aaa-8aaa-000000000001",
+  "cliSessionId": "c0000001-0000-4000-8000-000000000001",
+  "title": "Add offline sync queue",
+  "titleSource": "auto",
+  "isArchived": false,
+  "createdAt": 1791122400000,
+  "lastActivityAt": 1791125000000,
+  "cwd": "/Users/dev/work/orbit/.claude/worktrees/calm-heron",
+  "originCwd": "/Users/dev/work/orbit",
+  "gitAnchors": [
+    {"gitRoot": "/Users/dev/work/orbit", "commonDir": "/Users/dev/work/orbit/.git", "trustedAt": 1791122400000},
+    {"gitRoot": "/Users/dev/work/orbit/.claude/worktrees/calm-heron", "commonDir": "/Users/dev/work/orbit/.git", "gitDir": "/Users/dev/work/orbit/.git/worktrees/calm-heron", "trustedAt": 1791122400100}
+  ],
+  "branch": "claude/calm-heron",
+  "sourceBranch": "main",
+  "worktreeName": "calm-heron",
+  "completedTurns": 6,
+  "model": "claude-model-x",
+  "permissionMode": "default",
+  "enabledMcpTools": {},
+  "promptAppendSnapshot": {"blocks": [{"kind": "text", "text": "synthetic"}]},
+  "someFutureKey": {"nested": [1, 2, 3]}
+}
